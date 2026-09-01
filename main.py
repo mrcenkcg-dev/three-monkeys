@@ -1,110 +1,141 @@
-
 import os
-import subprocess
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+import sqlite3
+import urllib.request
+import xml.etree.ElementTree as ET
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Retrieve Amazon tag from environment variable
-AMAZON_TAG = os.environ.get("AMAZON_TAG", "mrcenk20-21")
+AFFILIATE_TAG = "mrcenk20-21"
 
-# Curated products showcase
-PRODUCTS = [
-    {
-        "title": "Wireless Noise Cancelling Headphones",
-        "asin": "B08N5WRWNW",
-        "img": "https://m.media-amazon.com/images/I/61+hb70vC6L._AC_SL1500_.jpg"
-    },
-    {
-        "title": "Mechanical Gaming Keyboard",
-        "asin": "B08C69F3NQ",
-        "img": "https://m.media-amazon.com/images/I/71cngLX2xaL._AC_SL1500_.jpg"
-    },
-    {
-        "title": "Ultra-Wide Gaming Monitor",
-        "asin": "B095J68CKG",
-        "img": "https://m.media-amazon.com/images/I/81T3v76wZ1L._AC_SL1500_.jpg"
-    }
-]
+# --- DATABASE SETUP ---
+def init_db():
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS deals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE,
+            price TEXT,
+            link TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-class WebAndHealthHandler(BaseHTTPRequestHandler):
+# --- MONKEY 1 & 2: MINER & CLEANER (BACKGROUND WORKER) ---
+def auto_miner_loop():
+    """Runs continuously in the background fetching and cleaning Amazon deals."""
+    print("[Three Monkeys] Background Miner & Cleaner active...")
+    while True:
+        try:
+            # Fetch tech deal feed (Amazon UK Tech RSS / Deal Feed)
+            feed_url = "https://www.amazon.co.uk/gp/rss/bestsellers/computers/ref=zg_bs_computers_rss_link"
+            req = urllib.request.Request(feed_url, headers={'User-Agent': 'Mozilla/5.0'})
+            
+            with urllib.request.urlopen(req) as response:
+                xml_data = response.read()
+                root = ET.fromstring(xml_data)
+                
+                conn = sqlite3.connect('data.db')
+                cursor = conn.cursor()
+                
+                for item in root.findall('.//item'):
+                    title = item.find('title').text if item.find('title') is not None else "Tech Deal"
+                    raw_link = item.find('link').text if item.find('link') is not None else ""
+                    
+                    if raw_link:
+                        # CLEANER AGENT: Strip tracking & inject mrcenk20-21
+                        clean_link = raw_link.split('?')[0] + f"?tag={AFFILIATE_TAG}"
+                        
+                        # Store in DB (Ignore duplicates)
+                        cursor.execute('''
+                            INSERT OR IGNORE INTO deals (title, price, link)
+                            VALUES (?, ?, ?)
+                        ''', (title, "Check Amazon UK", clean_link))
+                
+                conn.commit()
+                conn.close()
+                print("[Three Monkeys] Successfully mined and updated latest deals.")
+        except Exception as e:
+            print(f"[Three Monkeys] Miner Loop Error: {e}")
+            
+        # Run every 2 hours
+        time.sleep(7200)
+
+# --- STOREFRONT SERVER ---
+class StoreHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Health check endpoint for lightweight monitoring (cron-job.org)
-        if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "text/plain")
-            self.send_header("Content-Length", "2")
-            self.end_headers()
-            self.wfile.write(b"OK")
-            return
-
-        # Main landing page: Amazon Deals Storefront
         self.send_response(200)
-        self.send_header("Content-type", "text/html; charset=utf-8")
+        self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
 
+        conn = sqlite3.connect('data.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT title, price, link FROM deals ORDER BY id DESC LIMIT 20')
+        deals = cursor.fetchall()
+        conn.close()
+
         cards_html = ""
-        for item in PRODUCTS:
-            affiliate_url = f"https://www.amazon.co.uk/dp/{item['asin']}?tag={AMAZON_TAG}"
-            cards_html += f"""
-            <div style="border:1px solid #e0e0e0; border-radius:12px; padding:16px; margin:16px 0; background:#fff; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
-                <img src="{item['img']}" alt="{item['title']}" style="max-width:180px; height:auto; border-radius:8px; margin-bottom:12px;">
-                <h3 style="font-size:1.1rem; color:#333; margin:8px 0;">{item['title']}</h3>
-                <a href="{affiliate_url}" target="_blank" style="display:inline-block; background:#ffd814; color:#111; padding:10px 20px; border-radius:20px; text-decoration:none; font-weight:bold; margin-top:8px; border:1px solid #fcd200;">
-                    View Deal on Amazon &rarr;
-                </a>
+        if not deals:
+            cards_html = """
+            <div class="card">
+                <h3>System Initializing...</h3>
+                <p>The Monkeys are currently scanning Amazon UK for live deals. Check back in a few minutes!</p>
             </div>
             """
+        else:
+            for title, price, link in deals:
+                cards_html += f"""
+                <div class="card">
+                    <h3>{title}</h3>
+                    <p class="price">{price}</p>
+                    <a href="{link}" target="_blank" rel="noopener noreferrer" class="buy-btn">View Deal on Amazon UK</a>
+                </div>
+                """
 
-        html_content = f"""
+        html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Curated Tech Deals</title>
+            <title>Three Monkeys | Automated Tech Deals</title>
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }}
+                .container {{ max-width: 900px; margin: 0 auto; text-align: center; }}
+                h1 {{ color: #38bdf8; margin-bottom: 8px; }}
+                .subtitle {{ color: #94a3b8; margin-bottom: 32px; }}
+                .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }}
+                .card {{ background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; }}
+                .card h3 {{ margin-top: 0; color: #f1f5f9; font-size: 1rem; line-height: 1.4; }}
+                .price {{ color: #38bdf8; font-weight: bold; font-size: 1.1rem; margin: 8px 0; }}
+                .buy-btn {{ display: block; background: #f59e0b; color: #0f172a; font-weight: bold; padding: 10px; text-decoration: none; border-radius: 8px; margin-top: 12px; text-align: center; }}
+            </style>
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f7f9fa; max-width:600px; margin:0 auto; padding:20px;">
-            <header style="text-align:center; margin-bottom:24px;">
-                <h1 style="color:#111; margin-bottom:4px;">🔥 Top Tech Deals</h1>
-                <p style="color:#666; font-size:0.95rem;">Handpicked tech deals refreshed daily.</p>
-            </header>
-            <main>
-                {cards_html}
-            </main>
-            <footer style="text-align:center; margin-top:32px; font-size:0.75rem; color:#888;">
-                <p>As an Amazon Associate, I earn from qualifying purchases.</p>
-            </footer>
+        <body>
+            <div class="container">
+                <h1>Three Monkeys Automated Deals</h1>
+                <p class="subtitle">24/7 Autonomous Amazon UK Tech Scanner</p>
+                <div class="grid">{cards_html}</div>
+            </div>
         </body>
         </html>
         """
-        self.wfile.write(html_content.encode('utf-8'))
+        self.wfile.write(html.encode('utf-8'))
 
-    def log_message(self, format, *args):
-        return  # Keep console logs clean
+def run():
+    init_db()
+    
+    # Start the automated miner in a background thread
+    miner_thread = threading.Thread(target=auto_miner_loop, daemon=True)
+    miner_thread.start()
+    
+    port = int(os.environ.get("PORT", 8000))
+    server_address = ('', port)
+    httpd = HTTPServer(server_address, StoreHandler)
+    print(f"Server starting on port {port}...")
+    httpd.serve_forever()
 
-def run_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), WebAndHealthHandler)
-    server.serve_forever()
-
-# 1. Start Web Server in background thread
-threading.Thread(target=run_server, daemon=True).start()
-
-# 2. Initialize DB schema
-subprocess.run(["python", "database.py"])
-
-# 3. Launch sub-processes (Monkey Court)
-watcher = subprocess.Popen(["python", "watcher.py"])
-miner = subprocess.Popen(["python", "miner.py"])
-cleaner = subprocess.Popen(["python", "cleaner.py"])
-
-print("All 3 Monkey Court agents and Web Storefront successfully online!")
-
-# 4. Main loop watchdog
-try:
-    while True:
-        time.sleep(60)
-except KeyboardInterrupt:
-    watcher.terminate()
-    miner.terminate()
-    cleaner.terminate()
+if __name__ == "__main__":
+    run()
