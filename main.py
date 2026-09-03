@@ -1,9 +1,9 @@
 import os
-import sqlite3import os
 import sqlite3
 import time
 import threading
-import requests
+import json
+import urllib.request
 from flask import Flask, render_template_string, request, redirect, url_for
 
 app = Flask(__name__)
@@ -32,11 +32,12 @@ def init_db():
 
 init_db()
 
-# --- OPTION 1: AUTOMATED SEEDER AGENT ---
+# --- AUTOMATED SEEDER AGENT ---
 def auto_seeder_agent():
     """
     Runs continuously in a background thread.
     Fetches trending UK/Global deals every hour and populates hub.db automatically.
+    Uses built-in urllib to avoid external dependency requirements.
     """
     print("🤖 Auto-Seeder Agent initialized and running...")
     
@@ -53,48 +54,44 @@ def auto_seeder_agent():
             conn = sqlite3.connect(DB_FILE)
             cursor = conn.cursor()
             
-            # 1. Seed base pool if database is empty or low
-            cursor.execute("SELECT COUNT(*) FROM community_deals")
-            count = cursor.fetchone()[0]
-            
-            if count < len(seed_pool):
-                for title, category, url in seed_pool:
-                    cursor.execute("SELECT id FROM community_deals WHERE title = ?", (title,))
-                    if not cursor.fetchone():
-                        cursor.execute(
-                            "INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)",
-                            (title, category, url)
-                        )
-                        print(f"🤖 Auto-Seeder: Added '{title}' to hub database.")
-                conn.commit()
+            # 1. Seed base pool if database has missing entries
+            for title, category, url in seed_pool:
+                cursor.execute("SELECT id FROM community_deals WHERE title = ?", (title,))
+                if not cursor.fetchone():
+                    cursor.execute(
+                        "INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)",
+                        (title, category, url)
+                    )
+                    print(f"🤖 Auto-Seeder: Added '{title}' to hub database.")
+            conn.commit()
 
-            # 2. Fetch live public deals feed (Reddit API - r/beermoneyuk)
-            headers = {"User-Agent": "ThreeMonkeysHub/1.0"}
-            response = requests.get("https://www.reddit.com/r/beermoneyuk/hot.json?limit=5", headers=headers, timeout=10)
+            # 2. Fetch live public deals feed (Reddit API - r/beermoneyuk) using built-in urllib
+            url_endpoint = "https://www.reddit.com/r/beermoneyuk/hot.json?limit=5"
+            req = urllib.request.Request(url_endpoint, headers={"User-Agent": "ThreeMonkeysHub/1.0"})
             
-            if response.status_code == 200:
-                data = response.json()
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
                 posts = data.get("data", {}).get("children", [])
                 
                 for post in posts:
                     post_data = post.get("data", {})
                     title = post_data.get("title", "")[:80] # Truncate title
-                    url = post_data.get("url", "")
+                    deal_link = post_data.get("url", "")
                     
-                    # Filter for valid external links and skip non-deal posts
-                    if url and "reddit.com" not in url and title:
-                        cursor.execute("SELECT id FROM community_deals WHERE deal_url = ?", (url,))
+                    # Filter for valid external links and skip internal discussion threads
+                    if deal_link and "reddit.com" not in deal_link and title:
+                        cursor.execute("SELECT id FROM community_deals WHERE deal_url = ?", (deal_link,))
                         if not cursor.fetchone():
                             cursor.execute(
                                 "INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)",
-                                (title, "Banking & Finance", url)
+                                (title, "Banking & Finance", deal_link)
                             )
                             print(f"🤖 Auto-Seeder: Scraped & Published -> '{title}'")
                             conn.commit()
 
             conn.close()
         except Exception as e:
-            print(f"⚠️ Auto-Seeder Agent encountered an issue: {e}")
+            print(f"⚠️ Auto-Seeder Agent warning: {e}")
             
         # Sleep for 1 hour before checking for new deals again
         time.sleep(3600)
@@ -175,155 +172,6 @@ HTML_TEMPLATE = """
                 </ul>
             {% else %}
                 <p>Fetching automated deals... Refresh in a few seconds!</p>
-            {% endif %}
-        </div>
-    </div>
-</body>
-</html>
-"""
-
-# --- ROUTES ---
-@app.route("/")
-def home():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM community_deals ORDER BY id DESC")
-    deals = cursor.fetchall()
-    conn.close()
-    return render_template_string(HTML_TEMPLATE, deals=deals)
-
-@app.route("/submit", methods=["POST"])
-def submit_deal():
-    title = request.form.get("title")
-    category = request.form.get("category")
-    deal_url = request.form.get("deal_url")
-
-    if title and deal_url:
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)", 
-                       (title, category, deal_url))
-        conn.commit()
-        conn.close()
-
-    return redirect(url_for("home"))
-
-@app.route("/redirect/<int:deal_id>")
-def track_and_redirect(deal_id):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT deal_url FROM community_deals WHERE id = ?", (deal_id,))
-    result = cursor.fetchone()
-    
-    if result:
-        cursor.execute("UPDATE community_deals SET clicks = clicks + 1 WHERE id = ?", (deal_id,))
-        conn.commit()
-        conn.close()
-        return redirect(result[0])
-    
-    conn.close()
-    return redirect(url_for("home"))
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)from flask import Flask, render_template_string, request, redirect, url_for
-
-app = Flask(__name__)
-
-# --- DATABASE SETUP ---
-DB_FILE = "hub.db"
-
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS community_deals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            category TEXT NOT NULL,
-            deal_url TEXT NOT NULL,
-            clicks INTEGER DEFAULT 0
-        )
-    ''')
-    try:
-        cursor.execute("ALTER TABLE community_deals ADD COLUMN clicks INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# --- STOREFRONT HTML TEMPLATE ---
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three Monkeys - Community Deals Hub</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        h1 { text-align: center; color: #111; }
-        .card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .featured { border: 2px solid #ff4d4d; background: #fff8f8; }
-        .btn { display: inline-block; background: #ff4d4d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; }
-        .btn:hover { background: #e03e3e; }
-        form input, form select { width: 100%; padding: 10px; margin: 8px 0 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .click-badge { background: #eef2f5; color: #555; padding: 3px 8px; border-radius: 12px; font-size: 0.85em; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Three Monkeys Hub 🐒</h1>
-        
-        <!-- FEATURED MONZO OFFER -->
-        <div class="card featured">
-            <h2>🔥 Featured Partner Offer: Monzo</h2>
-            <p>Sign up for Monzo today using our official link and get your instant welcome bonus cash reward!</p>
-            <a href="https://join.monzo.com/c/wq24nrr2" target="_blank" class="btn">Claim Monzo Bonus</a>
-        </div>
-
-        <!-- COMMUNITY SUBMISSION FORM -->
-        <div class="card">
-            <h2>🚀 Add Your Deal / Link</h2>
-            <p>Post your deal or referral link to our open community hub!</p>
-            <form action="/submit" method="POST">
-                <label>Offer Title / App Name:</label>
-                <input type="text" name="title" placeholder="e.g., Free Stock on Robinhood" required>
-                
-                <label>Category:</label>
-                <select name="category">
-                    <option value="Banking & Finance">Banking & Finance</option>
-                    <option value="Cashback & Rewards">Cashback & Rewards</option>
-                    <option value="Tech & Deals">Tech & Deals</option>
-                    <option value="Other">Other</option>
-                </select>
-
-                <label>Your Referral / Deal Link:</label>
-                <input type="url" name="deal_url" placeholder="https://..." required>
-
-                <button type="submit" class="btn">Publish Deal To Hub</button>
-            </form>
-        </div>
-
-        <!-- LIVE COMMUNITY DEALS LIST -->
-        <div class="card">
-            <h2>🌐 Live Community Deals</h2>
-            {% if deals %}
-                <ul style="list-style: none; padding: 0;">
-                {% for deal in deals %}
-                    <li style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                        <strong>[{{ deal[2] }}] {{ deal[1] }}</strong> 
-                        <span class="click-badge">🔥 {{ deal[4] }} clicks routed</span><br><br>
-                        <a href="/redirect/{{ deal[0] }}" target="_blank" class="btn" style="background: #0066cc;">Visit Deal →</a>
-                    </li>
-                {% endfor %}
-                </ul>
-            {% else %}
-                <p>No community deals posted yet. Be the first to add one above!</p>
             {% endif %}
         </div>
     </div>
