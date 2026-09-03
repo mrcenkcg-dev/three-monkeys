@@ -53,8 +53,9 @@ def run_watcher_agent():
 
         # Sleep interval (4 hours)
         time.sleep(14400)
-
-if __name__ == "__main__":
-    run_watcher_agent()if __name__ == "__main__":
+File "/opt/render/project/src/watcher.py", line 58
+  run_watcher_agent()if __name__ == "__main__":
+                                              ^
+SyntaxError: invalid syntax
     run_watcher_agent()
 
