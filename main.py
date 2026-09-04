@@ -2,8 +2,29 @@ import os
 import sqlite3
 import timethree-monkeys
 /main.py
-Go to file
-t
+Go to filedef init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Enable WAL mode so multi-threaded AI agents don't lock SQLite
+    cursor.execute("PRAGMA journal_mode=WAL;")
+    cursor.execute("PRAGMA busy_timeout=5000;")
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS community_deals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            deal_url TEXT NOT NULL,
+            clicks INTEGER DEFAULT 0
+        )
+    ''')
+    try:
+        cursor.execute("ALTER TABLE community_deals ADD COLUMN clicks INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    conn.commit()
+    conn.close()t
 T
 mrcenkcg-dev
 mrcenkcg-dev
