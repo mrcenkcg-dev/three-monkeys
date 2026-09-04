@@ -1,5 +1,8 @@
 import os
 import sqlite3
+import time
+import threading
+import requests
 from flask import Flask, jsonify, request, redirect
 
 app = Flask(__name__)
@@ -39,11 +42,45 @@ def init_db():
 # Initialize DB on startup
 init_db()
 
+# --- 24/7 CLOUD BACKGROUND AGENT ---
+def start_background_agent():
+    """Autonomous agent loop that runs inside Render 24/7."""
+    time.sleep(10)  # Wait for server startup
+    sample_deals = [
+        {"title": "Anker USB-C Fast Charger 65W", "category": "Electronics", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
+        {"title": "Logitech MX Master 3S Wireless Mouse", "category": "Peripherals", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
+        {"title": "Samsung EVO Select 256GB MicroSD", "category": "Storage", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
+        {"title": "Sony WH-1000XM5 Noise Canceling Headphones", "category": "Audio", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
+        {"title": "Raspberry Pi 5 Starter Kit", "category": "Developer Tools", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01}
+    ]
+    
+    deal_index = 0
+    port = int(os.environ.get("PORT", 5000))
+    local_url = f"http://127.0.0.1:{port}/api/v1/buy-slot"
+    
+    while True:
+        try:
+            deal = sample_deals[deal_index % len(sample_deals)]
+            response = requests.post(local_url, json=deal, timeout=5)
+            if response.status_code == 201:
+                print(f"[24/7 Agent] Automatically posted deal: {deal['title']}")
+            deal_index += 1
+        except Exception as e:
+            print(f"[24/7 Agent] Loop waiting for endpoint: {e}")
+            
+        time.sleep(120)  # Autonomous run every 2 minutes 24/7
+
+# Launch background agent thread alongside Flask server
+agent_thread = threading.Thread(target=start_background_agent, daemon=True)
+agent_thread.start()
+
+# --- FLASK ENDPOINTS ---
 @app.route("/")
 def home():
     return jsonify({
         "status": "online",
         "service": "AI Exchange Building",
+        "agent_status": "24/7 Autonomous Loop Active",
         "endpoints": {
             "dashboard": "/dashboard",
             "stats": "/api/v1/stats",
@@ -97,7 +134,7 @@ def view_dashboard():
     </head>
     <body>
         <div class="container">
-            <div class="status-badge"><span class="dot"></span> 24/7 AI Exchange Active</div>
+            <div class="status-badge"><span class="dot"></span> 24/7 Autonomous Agent Active</div>
             <h2>Building Live Monitor</h2>
             
             <div class="card">
@@ -149,7 +186,6 @@ def buy_slot():
     if not title or not deal_url:
         return jsonify({"error": "Missing title or deal_url"}), 400
         
-    # Enforce minimum 1p (0.01) micro-toll
     if float(fee_paid) < 0.01:
         return jsonify({
             "error": "Payment insufficient",
