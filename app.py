@@ -8,6 +8,23 @@ app = Flask(__name__)
 # Load Stripe live key from Render environment variables
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
+def init_db():
+    conn = sqlite3.connect('deals.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS deals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            url TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Run DB initialization immediately when app starts
+init_db()
+
 def get_db():
     conn = sqlite3.connect('deals.db')
     conn.row_factory = sqlite3.Row
@@ -21,7 +38,6 @@ def index():
     deals = cursor.fetchall()
     conn.close()
     
-    # HTML Layout matching your Digital Billboard hub
     html = """
     <!DOCTYPE html>
     <html>
@@ -87,14 +103,13 @@ def create_checkout_session():
     category = request.form.get('category')
     url = request.form.get('url')
 
-    # Create £2.00 Stripe Checkout session
     session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=[{
             'price_data': {
                 'currency': 'gbp',
                 'product_data': {'name': f'Digital Billboard Post: {title}'},
-                'unit_amount': 200, # 200 pence = £2.00
+                'unit_amount': 200,
             },
             'quantity': 1,
         }],
@@ -115,7 +130,6 @@ def success():
     if session_id:
         session = stripe.checkout.Session.retrieve(session_id)
         if session.payment_status == 'paid':
-            # Save deal to database after successful £2 payment
             title = session.metadata['title']
             category = session.metadata['category']
             url = session.metadata['url']
@@ -128,19 +142,5 @@ def success():
             
     return redirect(url_for('index'))
 
-if __name__ == '__main__':def init_db():
-    conn = sqlite3.connect('deals.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS deals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            category TEXT NOT NULL,
-            url TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-# Run DB initialization on startup
-init_db()    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
