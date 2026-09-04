@@ -30,7 +30,6 @@ def init_db():
             is_priority INTEGER DEFAULT 0
         )
     ''')
-    # Schema migration safety checks
     try:
         cursor.execute("ALTER TABLE community_deals ADD COLUMN clicks INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
@@ -59,18 +58,19 @@ def post_deal_to_gate(endpoint, deal):
     except Exception as e:
         print(f"[{deal['category']} Agent] Error posting: {e}")
 
-# --- AGENT 1: Tech & Gadgets (Standard 1p & Priority Bidding) ---
+# --- AGENT 1: Tech & Gadgets (Multi-Tier Bidding) ---
 def start_tech_agent():
     time.sleep(10)
     deals = [
         {"title": "Anker USB-C 65W Fast Charger", "category": "Tech", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
-        {"title": "Logitech MX Master 3S Mouse", "category": "Tech", "deal_url": "https://amazon.co.uk", "fee_paid": 0.03},  # Priority bid!
-        {"title": "Raspberry Pi 5 Starter Kit", "category": "Tech", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01}
+        {"title": "Logitech MX Master 3S Mouse", "category": "Tech", "deal_url": "https://amazon.co.uk", "fee_paid": 0.03},
+        {"title": "MacBook Pro M3 Max Flash Sale", "category": "Tech", "deal_url": "https://amazon.co.uk", "fee_paid": 0.25}
     ]
     idx = 0
     while True:
         deal = deals[idx % len(deals)]
-        endpoint = "/api/v1/bid-slot" if deal["fee_paid"] > 0.01 else "/api/v1/buy-slot"
+        fee = deal["fee_paid"]
+        endpoint = "/api/v1/instant-slot" if fee >= 0.10 else ("/api/v1/bid-slot" if fee > 0.01 else "/api/v1/buy-slot")
         post_deal_to_gate(endpoint, deal)
         idx += 1
         time.sleep(120)
@@ -79,14 +79,15 @@ def start_tech_agent():
 def start_sports_agent():
     time.sleep(20)
     deals = [
-        {"title": "Fenerbahce Official Kit Discount", "category": "Sports", "deal_url": "https://amazon.co.uk", "fee_paid": 0.05}, # High Priority bid!
+        {"title": "Fenerbahce Derby VIP Ticket Pass", "category": "Sports", "deal_url": "https://amazon.co.uk", "fee_paid": 0.50},
         {"title": "PS5 Wireless Controller Black", "category": "Gaming", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
-        {"title": "Champions League Match Pass Deal", "category": "Sports", "deal_url": "https://amazon.co.uk", "fee_paid": 0.02}   # Priority bid!
+        {"title": "Champions League Final Ticket Alert", "category": "Sports", "deal_url": "https://amazon.co.uk", "fee_paid": 0.15}
     ]
     idx = 0
     while True:
         deal = deals[idx % len(deals)]
-        endpoint = "/api/v1/bid-slot" if deal["fee_paid"] > 0.01 else "/api/v1/buy-slot"
+        fee = deal["fee_paid"]
+        endpoint = "/api/v1/instant-slot" if fee >= 0.10 else ("/api/v1/bid-slot" if fee > 0.01 else "/api/v1/buy-slot")
         post_deal_to_gate(endpoint, deal)
         idx += 1
         time.sleep(120)
@@ -96,13 +97,14 @@ def start_retail_agent():
     time.sleep(30)
     deals = [
         {"title": "Samsung 256GB MicroSD Card", "category": "Storage", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01},
-        {"title": "Sony WH-1000XM5 ANC Headphones", "category": "Audio", "deal_url": "https://amazon.co.uk", "fee_paid": 0.04}, # Priority bid!
-        {"title": "Cloud Hosting Voucher 50% Off", "category": "Services", "deal_url": "https://amazon.co.uk", "fee_paid": 0.01}
+        {"title": "Sony WH-1000XM5 ANC Headphones", "category": "Audio", "deal_url": "https://amazon.co.uk", "fee_paid": 0.04},
+        {"title": "AWS Cloud Credits Voucher 80% Off", "category": "Services", "deal_url": "https://amazon.co.uk", "fee_paid": 0.30}
     ]
     idx = 0
     while True:
         deal = deals[idx % len(deals)]
-        endpoint = "/api/v1/bid-slot" if deal["fee_paid"] > 0.01 else "/api/v1/buy-slot"
+        fee = deal["fee_paid"]
+        endpoint = "/api/v1/instant-slot" if fee >= 0.10 else ("/api/v1/bid-slot" if fee > 0.01 else "/api/v1/buy-slot")
         post_deal_to_gate(endpoint, deal)
         idx += 1
         time.sleep(120)
@@ -117,18 +119,19 @@ threading.Thread(target=start_retail_agent, daemon=True).start()
 def home():
     return jsonify({
         "status": "online",
-        "service": "Pure AI Exchange Building",
+        "service": "High-Tier AI Exchange Building",
         "mode": "100% Autonomous M2M",
         "active_agents": 3,
         "endpoints": {
             "dashboard": "/dashboard",
             "stats": "/api/v1/stats",
             "standard_gate": "/api/v1/buy-slot (POST, 0.01)",
-            "priority_bidding_exchange": "/api/v1/bid-slot (POST, 0.02-0.05)"
+            "priority_exchange": "/api/v1/bid-slot (POST, 0.02-0.09)",
+            "enterprise_broadcast": "/api/v1/instant-slot (POST, 0.10-0.50)"
         }
     })
 
-# Standard 1p Entrance Toll
+# Standard 1p Toll
 @app.route("/api/v1/buy-slot", methods=["POST"])
 def buy_slot():
     data = request.get_json() or {}
@@ -154,7 +157,7 @@ def buy_slot():
 
     return jsonify({"message": "Standard slot published", "deal_id": deal_id, "fee_accepted": fee_paid}), 201
 
-# Dynamic Bidding Exchange (2p–5p High Priority Placement)
+# Dynamic Priority Bidding (2p–9p)
 @app.route("/api/v1/bid-slot", methods=["POST"])
 def bid_slot():
     data = request.get_json() or {}
@@ -178,7 +181,33 @@ def bid_slot():
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "Priority slot published to exchange", "deal_id": deal_id, "bid_accepted": fee_paid}), 200
+    return jsonify({"message": "Priority slot published", "deal_id": deal_id, "bid_accepted": fee_paid}), 200
+
+# High-Tier Enterprise Broadcast Slot (10p–50p)
+@app.route("/api/v1/instant-slot", methods=["POST"])
+def instant_slot():
+    data = request.get_json() or {}
+    title = data.get("title")
+    category = data.get("category", "General")
+    deal_url = data.get("deal_url")
+    fee_paid = float(data.get("fee_paid", 0.10))
+    
+    if not title or not deal_url:
+        return jsonify({"error": "Missing title or deal_url"}), 400
+    if fee_paid < 0.10:
+        return jsonify({"error": "Bid too low for Enterprise Instant Broadcast (Min 0.10)"}), 402
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO community_deals (title, category, deal_url, clicks, fee_paid, is_priority) VALUES (?, ?, ?, 0, ?, 2)",
+        (title, category, deal_url, fee_paid)
+    )
+    deal_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Enterprise slot broadcasted", "deal_id": deal_id, "premium_fee_accepted": fee_paid}), 200
 
 @app.route("/r/<int:deal_id>")
 def track_and_redirect(deal_id):
@@ -206,7 +235,7 @@ def get_stats():
     conn.close()
     return jsonify({
         "status": "active",
-        "system_type": "100% Machine-to-Machine Exchange",
+        "system_type": "Multi-Tier M2M AI Exchange",
         "total_active_slots": total_deals,
         "total_routed_traffic": total_clicks,
         "total_earned_revenue_gbp": round(total_revenue, 2)
@@ -218,7 +247,7 @@ def view_dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>AI Exchange Building - Pure M2M Monitor</title>
+        <title>AI Exchange Building - High-Tier Monitor</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             body { font-family: -apple-system, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; text-align: center; }
@@ -231,7 +260,7 @@ def view_dashboard():
     </head>
     <body>
         <div class="container">
-            <div class="status-badge">⚡ 100% Autonomous AI-to-AI Exchange</div>
+            <div class="status-badge">⚡ Enterprise Multi-Tier AI Exchange Active</div>
             <h2>Building Live Monitor</h2>
             <div class="card"><div class="label">Total Revenue Earned</div><div id="revenue" class="stat" style="color:#4ade80;">--</div></div>
             <div class="card"><div class="label">Total Gate Clicks</div><div id="clicks" class="stat">--</div></div>
