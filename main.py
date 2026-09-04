@@ -1,62 +1,22 @@
 import os
-import sqlite3# --- PUBLIC M2M API GATEWAY FOR EXTERNAL AI BOTS ---
-@app.route("/api/v1/buy-slot", methods=["POST"])
-@app.route("/api/v1/submit", methods=["POST"])  # Accepts both endpoint URLs
-def api_buy_slot():
-    # 1. Parse JSON payload sent by external AI bot
-    data = request.get_json(silent=True) or {}
-    
-    title = data.get("title")
-    category = data.get("category", "Tech & Deals")
-    deal_url = data.get("deal_url") or data.get("advert_url")
-    fee_paid = data.get("fee_paid", 0.01)
-
-    # 2. Validate payload
-    if not title or not deal_url:
-        return jsonify({
-            "status": "error",
-            "message": "Missing required parameters. 'title' and 'deal_url' are required."
-        }), 400
-
-    if float(fee_paid) < 0.01:
-        return jsonify({
-            "status": "error", 
-            "message": "Minimum 1p micro-fee (0.01) required."
-        }), 402
-
-    # 3. Insert directly into community_deals database
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)",
-        (title, category, deal_url)
-    )
-    deal_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-
-    print(f"🤖 Public API: External AI Bot bought slot #{deal_id} for '{title}'")
-
-    # 4. Return success to the external AI bot
-    return jsonify({
-        "status": "success",
-        "message": "Ad slot purchased and published live to billboard",
-        "deal_id": deal_id,
-        "fee_received": fee_paid,
-        "live_url": f"https://free-monkey-system.onrender.com/redirect/{deal_id}"
-    }), 201import time
+import sqlite3
+import time
 import threading
 import json
 import urllib.request
-from flask import Flask, render_template_string, request, redirect, url_for
+from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 
 app = Flask(__name__)
 
 # --- DATABASE SETUP ---
 DB_FILE = "hub.db"
 
+def get_db():
+    # Adding timeout=20 prevents 'database is locked' errors with multi-threading
+    return sqlite3.connect(DB_FILE, timeout=20)
+
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS community_deals (
@@ -76,12 +36,58 @@ def init_db():
 
 init_db()
 
-# --- OPTION 1: AUTOMATED SEEDER AGENT ---
+# --- PUBLIC M2M API GATEWAY FOR EXTERNAL AI BOTS ---
+@app.route("/api/v1/buy-slot", methods=["POST"])
+@app.route("/api/v1/submit", methods=["POST"])  # Accepts both endpoint URLs
+def api_buy_slot():
+    # 1. Parse JSON payload sent by external AI bot
+    data = request.get_json(silent=True) or {}
+    
+    title = data.get("title")
+    category = data.get("category", "Tech & Deals")
+    deal_url = data.get("deal_url") or data.get("advert_url")
+    fee_paid = data.get("fee_paid", 0.01)
+
+    # 2. Validate payload
+    if not title or not deal_url:
+        return jsonify({
+            "status": "error",
+            "message": "Missing required parameters. 'title' and 'deal_url' are required."
+        }), 400
+
+    try:
+        if float(fee_paid) < 0.01:
+            return jsonify({
+                "status": "error", 
+                "message": "Minimum 1p micro-fee (0.01) required."
+            }), 402
+    except ValueError:
+        return jsonify({"status": "error", "message": "Invalid fee_paid format."}), 400
+
+    # 3. Insert directly into community_deals database
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)",
+        (title, category, deal_url)
+    )
+    deal_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    print(f"🤖 Public API: External AI Bot bought slot #{deal_id} for '{title}'")
+
+    # 4. Return success to the external AI bot
+    return jsonify({
+        "status": "success",
+        "message": "Ad slot purchased and published live to billboard",
+        "deal_id": deal_id,
+        "fee_received": fee_paid,
+        "live_url": f"https://free-monkey-system.onrender.com/redirect/{deal_id}"
+    }), 201
+
+# --- AUTOMATED SEEDER AGENT ---
 def auto_seeder_agent():
-    """
-    Runs continuously in a background thread.
-    Fetches trending UK/Global deals every hour and populates hub.db automatically.
-    """
     print("🤖 Auto-Seeder Agent initialized and running...")
     
     seed_pool = [
@@ -93,7 +99,7 @@ def auto_seeder_agent():
     
     while True:
         try:
-            conn = sqlite3.connect(DB_FILE)
+            conn = get_db()
             cursor = conn.cursor()
             
             for title, category, url in seed_pool:
@@ -134,20 +140,15 @@ def auto_seeder_agent():
             
         time.sleep(3600)
 
-# --- OPTION 2: AUTOMATED POSTER AGENT ---
+# --- AUTOMATED POSTER AGENT ---
 def auto_poster_agent():
-    """
-    Runs continuously in a background thread.
-    Picks top deals from hub.db, formats social teasers with our hub link,
-    and pushes them to connected webhooks (Discord/Telegram).
-    """
     print("📣 Auto-Poster Traffic Agent initialized and running...")
     HUB_URL = "https://free-monkey-system.onrender.com"
     WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
     while True:
         try:
-            conn = sqlite3.connect(DB_FILE)
+            conn = get_db()
             cursor = conn.cursor()
             
             cursor.execute("SELECT id, title, category, clicks FROM community_deals ORDER BY clicks DESC, id DESC LIMIT 3")
@@ -270,10 +271,10 @@ HTML_TEMPLATE = """
 </html>
 """
 
-# --- ROUTES ---
+# --- WEB ROUTES ---
 @app.route("/")
 def home():
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM community_deals ORDER BY id DESC")
     deals = cursor.fetchall()
@@ -287,7 +288,7 @@ def submit_deal():
     deal_url = request.form.get("deal_url")
 
     if title and deal_url:
-        conn = sqlite3.connect(DB_FILE)
+        conn = get_db()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)", 
                        (title, category, deal_url))
@@ -298,7 +299,7 @@ def submit_deal():
 
 @app.route("/redirect/<int:deal_id>")
 def track_and_redirect(deal_id):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db()
     cursor = conn.cursor()
     
     cursor.execute("SELECT deal_url FROM community_deals WHERE id = ?", (deal_id,))
