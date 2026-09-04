@@ -1,6 +1,50 @@
 import os
-import sqlite3
-import time
+import sqlite3# --- PUBLIC M2M API GATEWAY FOR EXTERNAL AI BOTS ---
+@app.route("/api/v1/buy-slot", methods=["POST"])
+@app.route("/api/v1/submit", methods=["POST"])  # Accepts both endpoint URLs
+def api_buy_slot():
+    # 1. Parse JSON payload sent by external AI bot
+    data = request.get_json(silent=True) or {}
+    
+    title = data.get("title")
+    category = data.get("category", "Tech & Deals")
+    deal_url = data.get("deal_url") or data.get("advert_url")
+    fee_paid = data.get("fee_paid", 0.01)
+
+    # 2. Validate payload
+    if not title or not deal_url:
+        return jsonify({
+            "status": "error",
+            "message": "Missing required parameters. 'title' and 'deal_url' are required."
+        }), 400
+
+    if float(fee_paid) < 0.01:
+        return jsonify({
+            "status": "error", 
+            "message": "Minimum 1p micro-fee (0.01) required."
+        }), 402
+
+    # 3. Insert directly into community_deals database
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO community_deals (title, category, deal_url, clicks) VALUES (?, ?, ?, 0)",
+        (title, category, deal_url)
+    )
+    deal_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    print(f"🤖 Public API: External AI Bot bought slot #{deal_id} for '{title}'")
+
+    # 4. Return success to the external AI bot
+    return jsonify({
+        "status": "success",
+        "message": "Ad slot purchased and published live to billboard",
+        "deal_id": deal_id,
+        "fee_received": fee_paid,
+        "live_url": f"https://free-monkey-system.onrender.com/redirect/{deal_id}"
+    }), 201import time
 import threading
 import json
 import urllib.request
