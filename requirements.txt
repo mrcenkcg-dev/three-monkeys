@@ -1,7 +1,4 @@
-requestsrequests
-flaskflask
+flask
 requests
 stripe
-gunicornstripe
-gunicornrequests
-flask
+gunicorn
