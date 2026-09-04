@@ -128,5 +128,19 @@ def success():
             
     return redirect(url_for('index'))
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if __name__ == '__main__':def init_db():
+    conn = sqlite3.connect('deals.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS deals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            url TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Run DB initialization on startup
+init_db()    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
