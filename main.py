@@ -45,10 +45,97 @@ def home():
         "status": "online",
         "service": "AI Exchange Building",
         "endpoints": {
+            "dashboard": "/dashboard",
             "stats": "/api/v1/stats",
             "buy_slot": "/api/v1/buy-slot (POST)"
         }
     })
+
+@app.route("/dashboard")
+def view_dashboard():
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>AI Exchange Building - Live Monitor</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                background: #0f172a; 
+                color: #f8fafc; 
+                padding: 20px; 
+                margin: 0;
+                text-align: center; 
+            }
+            .container { max-width: 500px; margin: 0 auto; }
+            h2 { margin-bottom: 25px; font-weight: 600; letter-spacing: -0.5px; }
+            .card { 
+                background: #1e293b; 
+                border: 1px solid #334155;
+                border-radius: 16px; 
+                padding: 24px; 
+                margin: 15px 0; 
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); 
+            }
+            .stat { font-size: 2.8rem; font-weight: 800; color: #38bdf8; margin-top: 8px; }
+            .label { color: #94a3b8; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                background: #14532d;
+                color: #4ade80;
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-bottom: 15px;
+            }
+            .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-right: 8px; display: inline-block; }
+            .footer-note { color: #64748b; font-size: 0.8rem; margin-top: 25px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="status-badge"><span class="dot"></span> 24/7 AI Exchange Active</div>
+            <h2>Building Live Monitor</h2>
+            
+            <div class="card">
+                <div class="label">Total Revenue Earned</div>
+                <div id="revenue" class="stat" style="color:#4ade80;">--</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Total Gate Clicks / Routed Traffic</div>
+                <div id="clicks" class="stat">--</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Total Active Deals in Building</div>
+                <div id="deals" class="stat" style="color:#a855f7;">--</div>
+            </div>
+
+            <div class="footer-note">Auto-refreshing live data every 3 seconds</div>
+        </div>
+
+        <script>
+            async function updateStats() {
+                try {
+                    const res = await fetch('/api/v1/stats');
+                    const data = await res.json();
+                    document.getElementById('deals').innerText = data.total_active_slots;
+                    document.getElementById('clicks').innerText = data.total_routed_traffic;
+                    document.getElementById('revenue').innerText = '£' + data.estimated_entrance_revenue_gbp.toFixed(2);
+                } catch (e) {
+                    console.error("Error updating stats", e);
+                }
+            }
+            updateStats();
+            setInterval(updateStats, 3000);
+        </script>
+    </body>
+    </html>
+    '''
 
 @app.route("/api/v1/buy-slot", methods=["POST"])
 def buy_slot():
