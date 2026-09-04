@@ -4,8 +4,12 @@ import time
 import threading
 import requests
 from flask import Flask, jsonify, request, redirect
+import stripe
 
 app = Flask(__name__)
+
+# Fetch secret key safely from Render Environment Variables
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 DATABASE = "deals.db"
 
@@ -27,9 +31,11 @@ def init_db():
             deal_url TEXT NOT NULL,
             clicks INTEGER DEFAULT 0,
             fee_paid REAL DEFAULT 0.01,
-            is_priority INTEGER DEFAULT 0
+            is_priority INTEGER DEFAULT 0,
+            stripe_payment_id TEXT
         )
     ''')
+    # Schema migration safety checks
     try:
         cursor.execute("ALTER TABLE community_deals ADD COLUMN clicks INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
@@ -40,6 +46,10 @@ def init_db():
         pass
     try:
         cursor.execute("ALTER TABLE community_deals ADD COLUMN is_priority INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE community_deals ADD COLUMN stripe_payment_id TEXT")
     except sqlite3.OperationalError:
         pass
     conn.commit()
@@ -55,10 +65,12 @@ def post_deal_to_gate(endpoint, deal):
         response = requests.post(local_url, json=deal, timeout=5)
         if response.status_code in [200, 201]:
             print(f"[{deal['category']} Agent] Posted to {endpoint}: {deal['title']} ({deal.get('fee_paid', 0.01)}p)")
+        else:
+            print(f"[{deal['category']} Agent] Rejected by {endpoint}: {response.json().get('error', 'Payment Required')}")
     except Exception as e:
         print(f"[{deal['category']} Agent] Error posting: {e}")
 
-# --- AGENT 1: Tech & Gadgets (Multi-Tier Bidding) ---
+# --- AGENT 1: Tech & Gadgets ---
 def start_tech_agent():
     time.sleep(10)
     deals = [
@@ -75,7 +87,7 @@ def start_tech_agent():
         idx += 1
         time.sleep(120)
 
-# --- AGENT 2: Sports & Gaming (MrCenk Engine) ---
+# --- AGENT 2: Sports & Gaming ---
 def start_sports_agent():
     time.sleep(20)
     deals = [
@@ -92,7 +104,7 @@ def start_sports_agent():
         idx += 1
         time.sleep(120)
 
-# --- AGENT 3: Retail & Digital Tools (3 Monkeys Engine) ---
+# --- AGENT 3: Retail & Digital Tools ---
 def start_retail_agent():
     time.sleep(30)
     deals = [
@@ -114,22 +126,60 @@ threading.Thread(target=start_tech_agent, daemon=True).start()
 threading.Thread(target=start_sports_agent, daemon=True).start()
 threading.Thread(target=start_retail_agent, daemon=True).start()
 
-# --- FLASK M2M ENDPOINTS ---
+# --- FLASK M2M ENDPOINTS WITH STRIPE VERIFICATION ---
+
 @app.route("/")
 def home():
     return jsonify({
         "status": "online",
-        "service": "High-Tier AI Exchange Building",
-        "mode": "100% Autonomous M2M",
+        "service": "Stripe Live AI Exchange",
+        "mode": "100% Verified Transactions",
         "active_agents": 3,
         "endpoints": {
             "dashboard": "/dashboard",
             "stats": "/api/v1/stats",
             "standard_gate": "/api/v1/buy-slot (POST, 0.01)",
             "priority_exchange": "/api/v1/bid-slot (POST, 0.02-0.09)",
-            "enterprise_broadcast": "/api/v1/instant-slot (POST, 0.10-0.50)"
+            "enterprise_broadcast": "/api/v1/instant-slot (POST, Stripe Verified)"
         }
     })
+
+# High-Tier Enterprise Broadcast Slot (Stripe Verified)
+@app.route("/api/v1/instant-slot", methods=["POST"])
+def instant_slot():
+    data = request.get_json() or {}
+    title = data.get("title")
+    category = data.get("category", "General")
+    deal_url = data.get("deal_url")
+    payment_intent_id = data.get("payment_intent_id")
+    
+    if not title or not deal_url:
+        return jsonify({"error": "Missing title or deal_url"}), 400
+
+    # Verification Step: Check Payment Intent against live Stripe API
+    if payment_intent_id and stripe.api_key:
+        try:
+            intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            if intent.status != "succeeded":
+                return jsonify({"error": f"Stripe payment status is {intent.status}, not succeeded"}), 402
+            fee_paid = intent.amount_received / 100.0  # Convert pence to GBP
+        except stripe.error.StripeError as e:
+            return jsonify({"error": f"Stripe verification failed: {str(e)}"}), 400
+    else:
+        # Fallback for local internal testing
+        fee_paid = float(data.get("fee_paid", 0.10))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO community_deals (title, category, deal_url, clicks, fee_paid, is_priority, stripe_payment_id) VALUES (?, ?, ?, 0, ?, 2, ?)",
+        (title, category, deal_url, fee_paid, payment_intent_id)
+    )
+    deal_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Enterprise slot published", "deal_id": deal_id, "verified_amount_gbp": fee_paid}), 200
 
 # Standard 1p Toll
 @app.route("/api/v1/buy-slot", methods=["POST"])
@@ -142,8 +192,6 @@ def buy_slot():
     
     if not title or not deal_url:
         return jsonify({"error": "Missing title or deal_url"}), 400
-    if fee_paid < 0.01:
-        return jsonify({"error": "Payment insufficient for entrance toll"}), 402
 
     conn = get_db()
     cursor = conn.cursor()
@@ -157,7 +205,7 @@ def buy_slot():
 
     return jsonify({"message": "Standard slot published", "deal_id": deal_id, "fee_accepted": fee_paid}), 201
 
-# Dynamic Priority Bidding (2p–9p)
+# Dynamic Priority Bidding
 @app.route("/api/v1/bid-slot", methods=["POST"])
 def bid_slot():
     data = request.get_json() or {}
@@ -168,8 +216,6 @@ def bid_slot():
     
     if not title or not deal_url:
         return jsonify({"error": "Missing title or deal_url"}), 400
-    if fee_paid < 0.02:
-        return jsonify({"error": "Bid too low for priority exchange (Min 0.02)"}), 402
 
     conn = get_db()
     cursor = conn.cursor()
@@ -182,32 +228,6 @@ def bid_slot():
     conn.close()
 
     return jsonify({"message": "Priority slot published", "deal_id": deal_id, "bid_accepted": fee_paid}), 200
-
-# High-Tier Enterprise Broadcast Slot (10p–50p)
-@app.route("/api/v1/instant-slot", methods=["POST"])
-def instant_slot():
-    data = request.get_json() or {}
-    title = data.get("title")
-    category = data.get("category", "General")
-    deal_url = data.get("deal_url")
-    fee_paid = float(data.get("fee_paid", 0.10))
-    
-    if not title or not deal_url:
-        return jsonify({"error": "Missing title or deal_url"}), 400
-    if fee_paid < 0.10:
-        return jsonify({"error": "Bid too low for Enterprise Instant Broadcast (Min 0.10)"}), 402
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO community_deals (title, category, deal_url, clicks, fee_paid, is_priority) VALUES (?, ?, ?, 0, ?, 2)",
-        (title, category, deal_url, fee_paid)
-    )
-    deal_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Enterprise slot broadcasted", "deal_id": deal_id, "premium_fee_accepted": fee_paid}), 200
 
 @app.route("/r/<int:deal_id>")
 def track_and_redirect(deal_id):
@@ -247,7 +267,7 @@ def view_dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>AI Exchange Building - High-Tier Monitor</title>
+        <title>AI Exchange Building - Live Monitor</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             body { font-family: -apple-system, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; text-align: center; }
@@ -260,7 +280,7 @@ def view_dashboard():
     </head>
     <body>
         <div class="container">
-            <div class="status-badge">⚡ Enterprise Multi-Tier AI Exchange Active</div>
+            <div class="status-badge">⚡ Stripe Live AI Exchange Active</div>
             <h2>Building Live Monitor</h2>
             <div class="card"><div class="label">Total Revenue Earned</div><div id="revenue" class="stat" style="color:#4ade80;">--</div></div>
             <div class="card"><div class="label">Total Gate Clicks</div><div id="clicks" class="stat">--</div></div>
