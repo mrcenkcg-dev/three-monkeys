@@ -12,7 +12,7 @@ app = Flask(__name__)
 DB_FILE = "hub.db"
 
 def get_db():
-    # Adding timeout=20 prevents 'database is locked' errors with multi-threading
+    # Adding timeout=20 prevents 'database is locked' errors with multi-threaded agents
     return sqlite3.connect(DB_FILE, timeout=20)
 
 def init_db():
@@ -36,11 +36,38 @@ def init_db():
 
 init_db()
 
+# --- M2M LIVE STATS & MONITORING DASHBOARD API ---
+@app.route("/api/v1/stats", methods=["GET"])
+def api_m2m_stats():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 1. Total slot listings (Check-Ins)
+    cursor.execute("SELECT COUNT(*) FROM community_deals")
+    total_slots = cursor.fetchone()[0]
+    
+    # 2. Total outbound routing clicks (Check-Outs)
+    cursor.execute("SELECT SUM(clicks) FROM community_deals")
+    total_clicks = cursor.fetchone()[0] or 0
+    
+    # 3. Calculate estimated 1p micro-fee earnings (0.01 GBP per slot)
+    estimated_revenue_gbp = total_slots * 0.01
+
+    conn.close()
+
+    return jsonify({
+        "status": "online",
+        "market_mode": "M2M_AI_BOT_HUB",
+        "total_active_slots": total_slots,
+        "total_clicks_routed": total_clicks,
+        "estimated_microfee_earnings_gbp": round(estimated_revenue_gbp, 2),
+        "timestamp": time.time()
+    }), 200
+
 # --- PUBLIC M2M API GATEWAY FOR EXTERNAL AI BOTS ---
 @app.route("/api/v1/buy-slot", methods=["POST"])
-@app.route("/api/v1/submit", methods=["POST"])  # Accepts both endpoint URLs
+@app.route("/api/v1/submit", methods=["POST"])
 def api_buy_slot():
-    # 1. Parse JSON payload sent by external AI bot
     data = request.get_json(silent=True) or {}
     
     title = data.get("title")
@@ -48,7 +75,6 @@ def api_buy_slot():
     deal_url = data.get("deal_url") or data.get("advert_url")
     fee_paid = data.get("fee_paid", 0.01)
 
-    # 2. Validate payload
     if not title or not deal_url:
         return jsonify({
             "status": "error",
@@ -64,7 +90,6 @@ def api_buy_slot():
     except ValueError:
         return jsonify({"status": "error", "message": "Invalid fee_paid format."}), 400
 
-    # 3. Insert directly into community_deals database
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
@@ -77,7 +102,6 @@ def api_buy_slot():
 
     print(f"🤖 Public API: External AI Bot bought slot #{deal_id} for '{title}'")
 
-    # 4. Return success to the external AI bot
     return jsonify({
         "status": "success",
         "message": "Ad slot purchased and published live to billboard",
@@ -219,14 +243,12 @@ HTML_TEMPLATE = """
     <div class="container">
         <h1>Three Monkeys Hub 🐒</h1>
         
-        <!-- FEATURED MONZO OFFER -->
         <div class="card featured">
             <h2>🔥 Featured Partner Offer: Monzo</h2>
             <p>Sign up for Monzo today using our official link and get your instant welcome bonus cash reward!</p>
             <a href="https://join.monzo.com/c/wq24nrr2" target="_blank" class="btn">Claim Monzo Bonus</a>
         </div>
 
-        <!-- COMMUNITY SUBMISSION FORM -->
         <div class="card">
             <h2>🚀 Add Your Deal / Link</h2>
             <p>Post your deal or referral link to our open community hub!</p>
@@ -249,7 +271,6 @@ HTML_TEMPLATE = """
             </form>
         </div>
 
-        <!-- LIVE COMMUNITY DEALS LIST -->
         <div class="card">
             <h2>🌐 Live Community Deals <span class="bot-badge">🤖 Auto-Updated 24/7</span></h2>
             {% if deals %}
