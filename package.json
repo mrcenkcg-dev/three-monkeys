@@ -1,7 +1,7 @@
 {
   "name": "three-monkeys",
   "version": "1.0.0",
-  "description": "Automated RSS deal aggregator and payment engine",
+  "description": "Automated RSS deal aggregator, database, and payment engine",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,6 +9,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "rss-parser": "^3.13.0",
+    "sqlite3": "^5.1.7",
     "stripe": "^16.2.0"
   },
   "engines": {
