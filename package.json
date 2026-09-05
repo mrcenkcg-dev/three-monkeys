@@ -1,5 +1,20 @@
-{
-  "name": "three-monkeys-engine",
+{{
+  "name": "three-monkeys",
+  "version": "1.0.0",
+  "description": "Automated RSS deal aggregator and payment engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "rss-parser": "^3.13.0",
+    "stripe": "^16.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}  "name": "three-monkeys-engine",
   "version": "1.0.0",
   "description": "Clean hands-off automated deal engine",
   "main": "server.js",
