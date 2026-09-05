@@ -3,31 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Tech Deals</title>
+    <title>Monkey System | Deal Placements</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #38bdf8; }
-        p { color: #94a3b8; font-size: 0.95rem; }
-        .btn { display: inline-block; background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 1rem; cursor: pointer; border: none; }
-        .btn:hover { background: #1d4ed8; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f4f6f8; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+        h1 { color: #333; margin-bottom: 0.5rem; }
+        p { color: #666; margin-bottom: 1.5rem; }
+        button { background: #635bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; width: 100%; }
+        button:hover { background: #4b45c6; }
+        button:disabled { background: #a5a2f5; cursor: not-allowed; }
+        #status { margin-top: 1rem; font-size: 14px; color: #d32f2f; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Automated Deal Engine</h1>
-        <p>Live transaction gateway operational on Render.</p>
-        <button class="btn" id="payBtn">Test Placement (£1.00)</button>
+        <h1>Deal Placement</h1>
+        <p>Test payment gateway for deal submission.</p>
+        <button id="checkout-btn" onclick="startCheckout()">Test Placement (£1.00)</button>
+        <div id="status"></div>
     </div>
 
     <script>
-        document.getElementById('payBtn').addEventListener('click', async () => {
-            const res = await fetch('/create-checkout-session', { method: 'POST' });
-            const data = await res.json();
-            if (data.id) {
-                window.location.href = `https://checkout.stripe.com/c/pay/${data.id}`;
+        async function startCheckout() {
+            const btn = document.getElementById('checkout-btn');
+            const statusDiv = document.getElementById('status');
+            
+            btn.disabled = true;
+            btn.innerText = "Loading Stripe Checkout...";
+            statusDiv.innerText = "";
+
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.url) {
+                    // Redirect straight to Stripe
+                    window.location.href = data.url;
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "Test Placement (£1.00)";
+                    statusDiv.innerText = "Error: " + (data.error || "Failed to create checkout session.");
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = "Test Placement (£1.00)";
+                statusDiv.innerText = "Connection error. Please try again.";
             }
-        });
+        }
     </script>
 </body>
 </html>
