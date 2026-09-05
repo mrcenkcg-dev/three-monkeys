@@ -1,67 +1,106 @@
 const express = require('express');
 const Stripe = require('stripe');
 const Parser = require('rss-parser');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const parser = new Parser();
 
-// Configure your default affiliate tag (Amazon Associates ID)
 const AMAZON_AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'mrcenk20-21';
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// Level 3: Helper function to inject affiliate tracking into deal links
+// Level 4: Initialize SQLite Database in Server Memory
+const db = new sqlite3.Database(':memory:');
+
+db.serialize(() => {
+  // Deals Storage Table
+  db.run(`CREATE TABLE IF NOT EXISTS deals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    link TEXT,
+    monetizedLink TEXT,
+    pubDate TEXT,
+    snippet TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Local System Wallet Balance Table
+  db.run(`CREATE TABLE IF NOT EXISTS wallet (
+    id INTEGER PRIMARY KEY,
+    balance REAL DEFAULT 10.00
+  )`);
+
+  // Seed default wallet balance of £10.00 if empty
+  db.get(`SELECT COUNT(*) as count FROM wallet`, (err, row) => {
+    if (row && row.count === 0) {
+      db.run(`INSERT INTO wallet (id, balance) VALUES (1, 10.00)`);
+    }
+  });
+});
+
+// Helper: Transform affiliate links
 function attachAffiliateTag(originalUrl) {
   if (!originalUrl) return originalUrl;
-
   try {
     const url = new URL(originalUrl);
-
-    // If it's an Amazon link, ensure our affiliate tag is set
     if (url.hostname.includes('amazon.')) {
       url.searchParams.set('tag', AMAZON_AFFILIATE_TAG);
       return url.toString();
     }
-
-    // Return original URL if non-Amazon or already processed
     return originalUrl;
   } catch (err) {
     return originalUrl;
   }
 }
 
-// Level 2 & 3: RSS Feed Parsing with Link Monetization Engine
+// Level 2, 3 & 4: Fetch deals, save to SQLite, deduct micro-fee (£0.01 per run)
 app.get('/api/deals', async (req, res) => {
   try {
     const feedUrl = 'https://www.hotukdeals.com/rss/hot';
     const feed = await parser.parseURL(feedUrl);
 
-    // Extract top 10 deal items and attach monetization tags
+    // Process deals
     const deals = feed.items.slice(0, 10).map(item => {
       const originalLink = item.link;
       const monetizedLink = attachAffiliateTag(originalLink);
-
       return {
         title: item.title,
         link: originalLink,
         monetizedLink: monetizedLink,
-        isMonetized: monetizedLink !== originalLink || originalLink.includes('tag='),
         pubDate: item.pubDate,
         snippet: item.contentSnippet || item.title
       };
     });
 
-    res.json({
-      success: true,
-      monetizationTag: AMAZON_AFFILIATE_TAG,
-      count: deals.length,
-      deals
+    // Store in SQLite
+    const stmt = db.prepare(`INSERT INTO deals (title, link, monetizedLink, pubDate, snippet) VALUES (?, ?, ?, ?, ?)`);
+    deals.forEach(deal => {
+      stmt.run(deal.title, deal.link, deal.monetizedLink, deal.pubDate, deal.snippet);
     });
+    stmt.finalize();
+
+    // Deduct £0.01 micro-fee from system wallet balance
+    db.run(`UPDATE wallet SET balance = balance - 0.01 WHERE id = 1`);
+
+    // Fetch updated wallet balance
+    db.get(`SELECT balance FROM wallet WHERE id = 1`, (err, row) => {
+      const currentBalance = row ? parseFloat(row.balance).toFixed(2) : "10.00";
+
+      res.json({
+        success: true,
+        monetizationTag: AMAZON_AFFILIATE_TAG,
+        walletBalanceGBP: `£${currentBalance}`,
+        count: deals.length,
+        deals
+      });
+    });
+
   } catch (error) {
-    console.error("RSS Parse Error:", error.message);
-    res.status(500).json({ success: false, error: "Failed to fetch RSS deals stream." });
+    console.error("RSS/DB Error:", error.message);
+    res.status(500).json({ success: false, error: "Failed to process RSS deals stream." });
   }
 });
 
