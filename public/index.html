@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tech Deals</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #38bdf8; }
+        p { color: #94a3b8; font-size: 0.95rem; }
+        .btn { display: inline-block; background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 1rem; cursor: pointer; border: none; }
+        .btn:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Automated Deal Engine</h1>
+        <p>Live transaction gateway operational on Render.</p>
+        <button class="btn" id="payBtn">Test Placement (£1.00)</button>
+    </div>
+
+    <script>
+        document.getElementById('payBtn').addEventListener('click', async () => {
+            const res = await fetch('/create-checkout-session', { method: 'POST' });
+            const data = await res.json();
+            if (data.id) {
+                window.location.href = `https://checkout.stripe.com/c/pay/${data.id}`;
+            }
+        });
+    </script>
+</body>
+</html>
