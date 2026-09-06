@@ -3,109 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Live Tracker</title>
+    <title>Three Monkeys - Amazon Tech Deals Scanner</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h1 {
-            color: #f39c12;
-        }
-        .ad-container {
-            width: 100%;
-            max-width: 728px;
-            height: 90px;
-            background-color: #1e1e1e;
-            border: 1px dashed #444;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            max-width: 800px;
-            border-collapse: collapse;
-            background-color: #1e1e1e;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #333;
-        }
-        th {
-            background-color: #2a2a2a;
-            color: #f39c12;
-        }
-        tr:hover {
-            background-color: #252525;
-        }
-        .up { color: #2ecc71; }
-        .down { color: #e74c3c; }
+        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; text-align: center; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .deal-card { background: #1e1e1e; border: 1px solid #333; margin: 15px 0; padding: 15px; border-radius: 8px; text-align: left; }
+        .deal-title { font-size: 1.2em; font-weight: bold; color: #f39c12; }
+        .price { color: #2ecc71; font-weight: bold; }
+        .original-price { text-decoration: line-through; color: #888; margin-right: 10px; }
+        .discount { background: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+        .ad-container { margin: 20px 0; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Three Monkeys - Tech Deals Scanner</h1>
+        <p>Live Automated Tech Deals & Curated Offers</p>
 
-    <h1>Live Crypto Tracker</h1>
-
-    <!-- AD UNIT PLACEHOLDER -->
-    <div class="ad-container">
-        <!-- BEGIN AADS AD UNIT 2454491 -->
-        <div id="frame" style="width: 728px;margin: auto;z-index: 99998;height: auto">
-          <iframe data-aa='2454491' src='//ad.a-ads.com/2454491/?size=728x90' style='border:0; padding:0; width:728px; height:90px; overflow:hidden;display: block;margin: auto'></iframe>
+        <!-- A-Ads Banner Unit #2454491 -->
+        <div class="ad-container">
+            <iframe data-aa='2454491' src='//ad.a-ads.com/2454491?size=728x90' style='width:728px; height:90px; border:0px; padding:0; overflow:hidden; background-color: transparent;'></iframe>
         </div>
-        <!-- END AADS AD UNIT 2454491 -->
+
+        <div id="deals-list">Loading latest tech deals...</div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Asset</th>
-                <th>Price (USD)</th>
-                <th>24h Change</th>
-            </tr>
-        </thead>
-        <tbody id="crypto-table-body">
-            <tr>
-                <td colspan="3">Loading market data...</td>
-            </tr>
-        </tbody>
-    </table>
-
     <script>
-        async function fetchPrices() {
+        async function fetchDeals() {
             try {
-                const response = await fetch('/api/prices');
-                const data = await response.json();
-                const tbody = document.getElementById('crypto-table-body');
-                tbody.innerHTML = '';
+                const response = await fetch('/api/deals');
+                const deals = await response.json();
+                const container = document.getElementById('deals-list');
+                container.innerHTML = '';
 
-                data.forEach(coin => {
-                    const row = document.createElement('tr');
-                    const changeClass = coin.change_24h >= 0 ? 'up' : 'down';
-                    
-                    row.innerHTML = `
-                        <td><strong>${coin.symbol.toUpperCase()}</strong></td>
-                        <td>$${parseFloat(coin.price).toLocaleString()}</td>
-                        <td class="${changeClass}">${coin.change_24h}%</td>
+                deals.forEach(deal => {
+                    const card = document.createElement('div');
+                    card.className = 'deal-card';
+                    card.innerHTML = `
+                        <div class="deal-title">${deal.title} <span class="discount">${deal.discount}</span></div>
+                        <p>Category: ${deal.category}</p>
+                        <p>
+                            Price: <span class="original-price">${deal.originalPrice}</span>
+                            <span class="price">${deal.dealPrice}</span>
+                        </p>
+                        <a href="https://www.amazon.co.uk/?tag=${deal.tag}" target="_blank" style="color: #3498db;">View Deal on Amazon</a>
                     `;
-                    tbody.appendChild(row);
+                    container.appendChild(card);
                 });
             } catch (err) {
-                console.error('Failed to fetch prices:', err);
+                console.error("Error fetching deals:", err);
             }
         }
-
-        fetchPrices();
-        setInterval(fetchPrices, 10000); // refresh every 10s
+        fetchDeals();
     </script>
 </body>
 </html>
