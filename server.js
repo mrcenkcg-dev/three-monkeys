@@ -6,13 +6,33 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Price API endpoint required by index.html
-app.get('/api/prices', (req, res) => {
+// Three Monkeys Amazon Deals API
+app.get('/api/deals', (req, res) => {
     res.json([
-        { symbol: 'btc', price: 64250.50, change_24h: 2.45 },
-        { symbol: 'eth', price: 3480.10, change_24h: -0.85 },
-        { symbol: 'sol', price: 145.75, change_24h: 5.12 },
-        { symbol: 'ada', price: 0.42, change_24h: 1.15 }
+        {
+            title: "Wireless Noise Cancelling Headphones",
+            category: "Tech",
+            originalPrice: "£149.99",
+            dealPrice: "£89.99",
+            discount: "40% OFF",
+            tag: "mrcenk20-21"
+        },
+        {
+            title: "Smart Watch Fitness Tracker",
+            category: "Electronics",
+            originalPrice: "£79.99",
+            dealPrice: "£45.00",
+            discount: "44% OFF",
+            tag: "mrcenk20-21"
+        },
+        {
+            title: "Mechanical Gaming Keyboard",
+            category: "Gaming",
+            originalPrice: "£59.99",
+            dealPrice: "£34.99",
+            discount: "42% OFF",
+            tag: "mrcenk20-21"
+        }
     ]);
 });
 
@@ -21,5 +41,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Three Monkeys Tech Deals Server running on port ${PORT}`);
 });
