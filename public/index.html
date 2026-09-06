@@ -1,141 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Three Monkeys - Automated Deal Engine</title>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --text: #f8fafc;
-      --accent: #10b981;
-      --subtext: #94a3b8;
-    }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .container {
-      max-width: 800px;
-      width: 100%;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #334155;
-    }
-    h1 {
-      margin: 0 0 10px 0;
-      font-size: 2rem;
-      color: var(--accent);
-    }
-    .wallet-badge {
-      display: inline-block;
-      background: #334155;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-    .deal-grid {
-      display: grid;
-      gap: 16px;
-    }
-    .deal-card {
-      background-color: var(--card-bg);
-      border: 1px solid #334155;
-      padding: 16px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .deal-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .deal-title:hover {
-      color: var(--accent);
-    }
-    .deal-snippet {
-      font-size: 0.9rem;
-      color: var(--subtext);
-    }
-    .deal-meta {
-      font-size: 0.8rem;
-      color: var(--subtext);
-      display: flex;
-      justify-content: space-between;
-      margin-top: 6px;
-    }
-    .btn-buy {
-      align-self: flex-start;
-      background-color: var(--accent);
-      color: #000;
-      padding: 8px 16px;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 0.85rem;
-      margin-top: 8px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Live Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #f39c12;
+        }
+        .ad-container {
+            width: 100%;
+            max-width: 728px;
+            height: 90px;
+            background-color: #1e1e1e;
+            border: 1px dashed #444;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            max-width: 800px;
+            border-collapse: collapse;
+            background-color: #1e1e1e;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #2a2a2a;
+            color: #f39c12;
+        }
+        tr:hover {
+            background-color: #252525;
+        }
+        .up { color: #2ecc71; }
+        .down { color: #e74c3c; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Three Monkeys Deal Engine</h1>
-      <div class="wallet-badge" id="wallet-display">System Balance: Loading...</div>
-    </header>
 
-    <main class="deal-grid" id="deals-container">
-      <div style="text-align: center; color: var(--subtext);">Fetching live monetized deals...</div>
-    </main>
-  </div>
+    <h1>Live Crypto Tracker</h1>
 
-  <script>
-    async function loadDeals() {
-      try {
-        const response = await fetch('/api/deals');
-        const data = await response.json();
+    <!-- AD UNIT PLACEHOLDER -->
+    <div class="ad-container">
+        <!-- BEGIN AADS AD UNIT 2454491 -->
+        <div id="frame" style="width: 728px;margin: auto;z-index: 99998;height: auto">
+          <iframe data-aa='2454491' src='//ad.a-ads.com/2454491/?size=728x90' style='border:0; padding:0; width:728px; height:90px; overflow:hidden;display: block;margin: auto'></iframe>
+        </div>
+        <!-- END AADS AD UNIT 2454491 -->
+    </div>
 
-        if (data.success) {
-          document.getElementById('wallet-display').innerText = `System Balance: ${data.walletBalanceGBP}`;
-          
-          const container = document.getElementById('deals-container');
-          container.innerHTML = '';
+    <table>
+        <thead>
+            <tr>
+                <th>Asset</th>
+                <th>Price (USD)</th>
+                <th>24h Change</th>
+            </tr>
+        </thead>
+        <tbody id="crypto-table-body">
+            <tr>
+                <td colspan="3">Loading market data...</td>
+            </tr>
+        </tbody>
+    </table>
 
-          data.deals.forEach(deal => {
-            const card = document.createElement('div');
-            card.className = 'deal-card';
-            card.innerHTML = `
-              <a href="${deal.monetizedLink}" target="_blank" class="deal-title">${deal.title}</a>
-              <div class="deal-snippet">${deal.snippet}</div>
-              <div class="deal-meta">
-                <span>Date: ${new Date(deal.pubDate).toLocaleDateString()}</span>
-                <span>Tag Active: ${data.monetizationTag}</span>
-              </div>
-              <a href="${deal.monetizedLink}" target="_blank" class="btn-buy">View Deal &rarr;</a>
-            `;
-            container.appendChild(card);
-          });
+    <script>
+        async function fetchPrices() {
+            try {
+                const response = await fetch('/api/prices');
+                const data = await response.json();
+                const tbody = document.getElementById('crypto-table-body');
+                tbody.innerHTML = '';
+
+                data.forEach(coin => {
+                    const row = document.createElement('tr');
+                    const changeClass = coin.change_24h >= 0 ? 'up' : 'down';
+                    
+                    row.innerHTML = `
+                        <td><strong>${coin.symbol.toUpperCase()}</strong></td>
+                        <td>$${parseFloat(coin.price).toLocaleString()}</td>
+                        <td class="${changeClass}">${coin.change_24h}%</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Failed to fetch prices:', err);
+            }
         }
-      } catch (err) {
-        console.error('Failed to load deals:', err);
-      }
-    }
 
-    loadDeals();
-  </script>
+        fetchPrices();
+        setInterval(fetchPrices, 10000); // refresh every 10s
+    </script>
 </body>
 </html>
