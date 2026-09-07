@@ -3,13 +3,10 @@ from moviepy.editor import ColorClip, TextClip, CompositeVideoClip
 
 print("Starting video build...")
 
-# 1. Create a simple 5-second background clip (low resolution to save memory)
-bg = ColorClip(size=(640, 360), color=(20, 20, 20), duration=5)
+# Low resolution (640x360) and 15 fps keep RAM usage under 100MB
+bg = ColorClip(size=(640, 360), color=(20, 20, 20), duration=3)
+txt = TextClip("Tech Deal Test", fontsize=30, color='white').set_duration(3).set_position('center')
 
-# 2. Add text
-txt = TextClip("Tech Deal Test", fontsize=40, color='white').set_duration(5).set_position('center')
-
-# 3. Combine and write file using low memory settings
 video = CompositeVideoClip([bg, txt])
 video.write_videofile(
     "test_deal.mp4", 
