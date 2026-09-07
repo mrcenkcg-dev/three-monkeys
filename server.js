@@ -6,25 +6,25 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Middleware
 app.use(express.json());
 
-// 1. Video Trigger Endpoint
+// 1. Explicit Video Route
 app.get('/make-video', (req, res) => {
-    console.log("Starting video generation process...");
+    console.log("Triggering video generator...");
     exec('python3 video_generator.py', (error, stdout, stderr) => {
         if (error) {
             console.error(`Exec Error: ${error.message}`);
             return res.status(500).send(`Video Generation Failed: ${error.message}`);
         }
+        console.log(`Output: ${stdout}`);
         res.send("SUCCESS: Video generated successfully!");
     });
 });
 
-// 2. SQLite Database Setup
+// 2. Database Connection
 const db = new sqlite3.Database('./database.db', (err) => {
     if (err) {
-        console.error('Error opening database:', err.message);
+        console.error('Database connection error:', err.message);
     } else {
         console.log('Connected to SQLite database.');
         db.run(`CREATE TABLE IF NOT EXISTS community_deals (
@@ -37,7 +37,6 @@ const db = new sqlite3.Database('./database.db', (err) => {
             stripe_payment_id TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
-        
         db.run(`CREATE TABLE IF NOT EXISTS wallet (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             balance REAL DEFAULT 10.00
@@ -45,25 +44,23 @@ const db = new sqlite3.Database('./database.db', (err) => {
     }
 });
 
-// 3. Deals API Endpoint
+// 3. Deals API Route
 app.get('/api/deals', (req, res) => {
     db.all("SELECT * FROM community_deals ORDER BY created_at DESC", [], (err, rows) => {
         if (err) {
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
         res.json({ deals: rows });
     });
 });
 
-// 4. Serve Root Folder
-app.use(express.static(path.join(__dirname, '..')));
+// 4. Static Assets & Main Route
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start Express Server
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server listening on port ${PORT}`);
 });
