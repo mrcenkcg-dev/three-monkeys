@@ -1,6 +1,7 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const { exec } = require('child_process');
 
 const app = express();
@@ -8,16 +9,31 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// 1. Direct Video Route with Absolute Path
+// 1. Diagnostic /make-video Route
 app.get('/make-video', (req, res) => {
-    const scriptPath = path.join(__dirname, 'video_generator.py');
-    console.log(`Triggering script at: ${scriptPath}`);
+    // Look in current directory or src subfolder
+    let scriptPath = path.join(__dirname, 'video_generator.py');
+    
+    if (!fs.existsSync(scriptPath)) {
+        scriptPath = path.join(__dirname, 'src', 'video_generator.py');
+    }
+
+    if (!fs.existsSync(scriptPath)) {
+        return res.status(404).send(`
+            <h2>File Not Found Error</h2>
+            <p>Could not locate video_generator.py at: ${scriptPath}</p>
+            <p><b>Current __dirname:</b> ${__dirname}</p>
+            <p><b>Files in __dirname:</b> ${fs.readdirSync(__dirname).join(', ')}</p>
+        `);
+    }
+
+    console.log(`Executing Python script at: ${scriptPath}`);
 
     exec(`python3 "${scriptPath}"`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Exec Error: ${error.message}`);
             return res.status(500).send(`
-                <h2>Video Generation Failed</h2>
+                <h2>Python Execution Error</h2>
                 <p><b>Error:</b> ${error.message}</p>
                 <p><b>Stderr:</b> ${stderr || 'None'}</p>
             `);
@@ -63,11 +79,14 @@ app.get('/api/deals', (req, res) => {
     });
 });
 
-// 4. Static Files & Root
+// 4. Serve Static Files
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    const indexPath = fs.existsSync(path.join(__dirname, 'index.html'))
+        ? path.join(__dirname, 'index.html')
+        : path.join(__dirname, 'src', 'index.html');
+    res.sendFile(indexPath);
 });
 
 app.listen(PORT, () => {
