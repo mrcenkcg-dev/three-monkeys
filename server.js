@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 10000;
 // Middleware
 app.use(express.json());
 
-// 1. Video Trigger Endpoint (Must be above static files)
+// 1. Video Trigger Endpoint
 app.get('/make-video', (req, res) => {
     console.log("Starting video generation process...");
     exec('python3 video_generator.py', (error, stdout, stderr) => {
@@ -21,7 +21,7 @@ app.get('/make-video', (req, res) => {
     });
 });
 
-// SQLite Database Setup
+// 2. SQLite Database Setup
 const db = new sqlite3.Database('./database.db', (err) => {
     if (err) {
         console.error('Error opening database:', err.message);
@@ -45,7 +45,7 @@ const db = new sqlite3.Database('./database.db', (err) => {
     }
 });
 
-// Deals API Endpoint
+// 3. Deals API Endpoint
 app.get('/api/deals', (req, res) => {
     db.all("SELECT * FROM community_deals ORDER BY created_at DESC", [], (err, rows) => {
         if (err) {
@@ -56,16 +56,11 @@ app.get('/api/deals', (req, res) => {
     });
 });
 
-// Serve Static Files & Homepage Dashboard
-app.use(express.static(path.join(__dirname)));
+// 4. Serve Root Folder
+app.use(express.static(path.join(__dirname, '..')));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Catch-all for undefined routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 // Start Express Server
