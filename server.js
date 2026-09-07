@@ -8,20 +8,29 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// 1. Explicit Video Route
+// 1. Direct Video Route with Absolute Path
 app.get('/make-video', (req, res) => {
-    console.log("Triggering video generator...");
-    exec('python3 video_generator.py', (error, stdout, stderr) => {
+    const scriptPath = path.join(__dirname, 'video_generator.py');
+    console.log(`Triggering script at: ${scriptPath}`);
+
+    exec(`python3 "${scriptPath}"`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Exec Error: ${error.message}`);
-            return res.status(500).send(`Video Generation Failed: ${error.message}`);
+            return res.status(500).send(`
+                <h2>Video Generation Failed</h2>
+                <p><b>Error:</b> ${error.message}</p>
+                <p><b>Stderr:</b> ${stderr || 'None'}</p>
+            `);
         }
-        console.log(`Output: ${stdout}`);
-        res.send("SUCCESS: Video generated successfully!");
+        res.send(`
+            <h2>SUCCESS!</h2>
+            <p>Video generated successfully!</p>
+            <pre>${stdout}</pre>
+        `);
     });
 });
 
-// 2. Database Connection
+// 2. Database Setup
 const db = new sqlite3.Database('./database.db', (err) => {
     if (err) {
         console.error('Database connection error:', err.message);
@@ -54,7 +63,7 @@ app.get('/api/deals', (req, res) => {
     });
 });
 
-// 4. Static Assets & Main Route
+// 4. Static Files & Root
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
