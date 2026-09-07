@@ -9,21 +9,14 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// 1. Diagnostic /make-video Route
+// 1. Direct Video Route
 app.get('/make-video', (req, res) => {
-    // Look in current directory or src subfolder
-    let scriptPath = path.join(__dirname, 'video_generator.py');
-    
-    if (!fs.existsSync(scriptPath)) {
-        scriptPath = path.join(__dirname, 'src', 'video_generator.py');
-    }
+    const scriptPath = path.join(__dirname, 'video_generator.py');
 
     if (!fs.existsSync(scriptPath)) {
         return res.status(404).send(`
-            <h2>File Not Found Error</h2>
+            <h2>Script Missing</h2>
             <p>Could not locate video_generator.py at: ${scriptPath}</p>
-            <p><b>Current __dirname:</b> ${__dirname}</p>
-            <p><b>Files in __dirname:</b> ${fs.readdirSync(__dirname).join(', ')}</p>
         `);
     }
 
@@ -83,10 +76,7 @@ app.get('/api/deals', (req, res) => {
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-    const indexPath = fs.existsSync(path.join(__dirname, 'index.html'))
-        ? path.join(__dirname, 'index.html')
-        : path.join(__dirname, 'src', 'index.html');
-    res.sendFile(indexPath);
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
