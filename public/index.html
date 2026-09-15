@@ -1,136 +1,198 @@
-<div class="welcome-container">
-    <!-- Friendly Greeting Window -->
-    <div class="glass-window welcome-banner">
-        <h2>Welcome to Shoulder to Shoulder</h2>
-        <p>We are happy to accommodate you, and we are proud to have you resident here with us. Your effort, your reward.</p>
+<div class="launch-page">
+    <!-- Welcome Header -->
+    <div class="welcome-box">
+        <h2>Shoulder to Shoulder</h2>
+        <p class="subtitle">Minimalist Engagement & Publishing Platform</p>
+        <p class="greeting-text">We are happy to accommodate you, and we are proud to have you resident here with us. Your effort, your reward.</p>
     </div>
 
-    <!-- Core Hourly Earnings Window -->
-    <div class="glass-window">
-        <h3>Live Earnings Rate</h3>
-        <div class="rate-row">
-            <span>1 Hour of Work</span>
-            <span class="value">£1</span>
+    <!-- Green Square: Hourly Wages & Math -->
+    <div class="green-wage-box">
+        <h3>Live Hourly Wages</h3>
+        <div class="wage-row"><span>1 Hour of Work</span> <span class="rate">£1</span></div>
+        <div class="wage-row highlight"><span>24 Hours of Work</span> <span class="rate">£24</span></div>
+    </div>
+
+    <!-- Metallic Tier Balls & Bonus Rewards -->
+    <div class="tier-section">
+        <h3>Milestone Rewards</h3>
+        
+        <div class="tier-card bronze-ball">
+            <div class="ball-icon bronze">Bronze</div>
+            <div class="tier-info">
+                <span class="tier-title">Bronze Tier (6 Hours Work)</span>
+                <span class="tier-bonus">+ £2 Bonus</span>
+            </div>
         </div>
-        <div class="rate-row highlight">
-            <span>24 Hours of Work</span>
-            <span class="value">£24</span>
+
+        <div class="tier-card silver-ball">
+            <div class="ball-icon silver">Silver</div>
+            <div class="tier-info">
+                <span class="tier-title">Silver Tier (12 Hours Work)</span>
+                <span class="tier-bonus">+ £5 Bonus</span>
+            </div>
+        </div>
+
+        <div class="tier-card gold-ball">
+            <div class="ball-icon gold">Gold</div>
+            <div class="tier-info">
+                <span class="tier-title">Gold Tier (24 Hours Work)</span>
+                <span class="tier-bonus">+ £12 Bonus</span>
+            </div>
         </div>
     </div>
 
-    <!-- Milestone Bonus Windows -->
-    <div class="glass-window">
-        <h3>Milestone Bonus Tiers</h3>
-        <div class="tier-grid">
-            <div class="tier-box">
-                <span class="tier-title">Bronze Tier</span>
-                <span class="tier-desc">6 Hours Work</span>
-                <span class="tier-extra">+ £2 Bonus</span>
-            </div>
-            <div class="tier-box">
-                <span class="tier-title">Silver Tier</span>
-                <span class="tier-desc">12 Hours Work</span>
-                <span class="tier-extra">+ £5 Bonus</span>
-            </div>
-            <div class="tier-box gold">
-                <span class="tier-title">Gold Tier</span>
-                <span class="tier-desc">24 Hours Work</span>
-                <span class="tier-extra">+ £12 Bonus</span>
-            </div>
-        </div>
+    <!-- Platform Rules & Terms -->
+    <div class="rules-box">
+        <h3>Platform Rules & Terms</h3>
+        <ul>
+            <li><strong>Real Work, Real Earnings:</strong> Your income depends entirely on your effort. Work hard, browse, and click through automated feeds to earn.</li>
+            <li><strong>Whole-Pound Cash-Out & Reset:</strong> Payouts are in whole-pound increments (fractional remainders stay with the system). Pressing cash-out triggers an immediate account exit and reset, keeping our slots fresh.</li>
+            <li><strong>£5 Threshold:</strong> Cash out anytime you hit £5 via Amazon gift cards, Google gift cards, or Google Pay.</li>
+            <li><strong>Zero Ghosts Policy:</strong> Inactive accounts for 31 days are automatically purged to keep slots open for active participants.</li>
+            <li><strong>Batch Capacity:</strong> Strict 1,000-slot batches ensure a fair and high-speed environment for everyone.</li>
+        </ul>
     </div>
 
     <!-- Action Button -->
-    <button class="join-btn">Enter Platform & Join Channels</button>
+    <button class="launch-btn">Enter Platform & Join Channels</button>
 </div>
 
 <style>
-.welcome-container {
+.launch-page {
     background: #090d16;
-    padding: 30px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #f0f6fc;
+    padding: 30px;
     max-width: 650px;
     margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-.glass-window {
+.welcome-box, .green-wage-box, .tier-section, .rules-box {
     background: #111622;
     border: 1px solid #30363d;
-    border-radius: 8px; /* Sharp, clean modern edges */
+    border-radius: 8px;
     padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-.welcome-banner h2 {
+.welcome-box h2 {
+    margin: 0 0 4px 0;
     color: #ffffff;
-    margin-top: 0;
-    font-size: 24px;
 }
-.welcome-banner p {
+.subtitle {
     color: #8b949e;
-    font-size: 15px;
-    line-height: 1.5;
-    margin-bottom: 0;
-}
-.glass-window h3 {
     font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #8b949e;
-    margin-top: 0;
     margin-bottom: 12px;
 }
-.rate-row {
+.greeting-text {
+    color: #c9d1d9;
+    font-size: 15px;
+    line-height: 1.4;
+    margin: 0;
+}
+/* Green Square for Wages */
+.green-wage-box {
+    background: #0d2818;
+    border-color: #2ea043;
+}
+.green-wage-box h3 {
+    color: #2ea043;
+    margin-top: 0;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.wage-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    background: #161b22;
-    padding: 12px 16px;
-    border-radius: 6px;
-    margin-bottom: 8px;
+    padding: 8px 0;
+    font-size: 16px;
     font-weight: 600;
 }
-.rate-row.highlight {
-    border: 1px solid #f0b429;
+.wage-row.highlight {
+    border-top: 1px solid rgba(46, 160, 67, 0.3);
+    margin-top: 4px;
+    padding-top: 12px;
 }
-.value {
+.rate {
     color: #2ea043;
     font-size: 18px;
 }
-.tier-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+/* Metallic Tier Balls */
+.tier-section h3, .rules-box h3 {
+    margin-top: 0;
+    font-size: 15px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.tier-box {
+.tier-card {
+    display: flex;
+    align-items: center;
     background: #161b22;
     border: 1px solid #30363d;
     border-radius: 6px;
     padding: 12px;
-    text-align: center;
+    margin-bottom: 10px;
 }
-.tier-box.gold {
-    border-color: #f0b429;
+.ball-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-right: 15px;
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.4);
+}
+.ball-icon.bronze {
+    background: linear-gradient(135deg, #cd7f32, #8b4513);
+    color: #fff;
+    border: 1px solid #e0a96d;
+}
+.ball-icon.silver {
+    background: linear-gradient(135deg, #e0e0e0, #757575);
+    color: #111;
+    border: 1px solid #ffffff;
+}
+.ball-icon.gold {
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    color: #111;
+    border: 1px solid #fffae6;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), inset 0 2px 4px rgba(255,255,255,0.5);
+}
+.tier-info {
+    display: flex;
+    flex-direction: column;
 }
 .tier-title {
-    display: block;
     font-weight: bold;
     font-size: 14px;
-    margin-bottom: 4px;
 }
-.tier-desc {
-    display: block;
-    font-size: 12px;
-    color: #8b949e;
-    margin-bottom: 8px;
-}
-.tier-extra {
-    display: block;
+.tier-bonus {
     font-size: 13px;
     color: #f0b429;
     font-weight: bold;
+    margin-top: 2px;
 }
-.join-btn {
+/* Rules */
+.rules-box ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #8b949e;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.rules-box li {
+    margin-bottom: 8px;
+}
+.rules-box strong {
+    color: #f0f6fc;
+}
+/* Launch Button */
+.launch-btn {
     width: 100%;
     background: #238636;
     color: #ffffff;
@@ -141,10 +203,9 @@
     font-weight: bold;
     cursor: pointer;
     text-align: center;
-    margin-top: 10px;
-    transition: background 0.2s;
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.4);
 }
-.join-btn:hover {
+.launch-btn:hover {
     background: #2ea043;
 }
 </style>
