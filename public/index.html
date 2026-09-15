@@ -1,113 +1,150 @@
-<div class="platform-board">
-    <!-- Header -->
-    <div class="board-header">
-        <h2>Live Task Station</h2>
-        <p class="subtitle">Global Output & Reward Schedule</p>
+<div class="welcome-container">
+    <!-- Friendly Greeting Window -->
+    <div class="glass-window welcome-banner">
+        <h2>Welcome to Shoulder to Shoulder</h2>
+        <p>We are happy to accommodate you, and we are proud to have you resident here with us. Your effort, your reward.</p>
     </div>
 
-    <!-- Core Math Grid -->
-    <div class="metric-grid">
-        <div class="metric-card">
-            <span class="time-block">1 Hour</span>
-            <span class="equals">=</span>
-            <span class="pay-block">£1</span>
+    <!-- Core Hourly Earnings Window -->
+    <div class="glass-window">
+        <h3>Live Earnings Rate</h3>
+        <div class="rate-row">
+            <span>1 Hour of Work</span>
+            <span class="value">£1</span>
         </div>
-        <div class="metric-card highlight">
-            <span class="time-block">24 Hours</span>
-            <span class="equals">=</span>
-            <span class="pay-block">£24</span>
+        <div class="rate-row highlight">
+            <span>24 Hours of Work</span>
+            <span class="value">£24</span>
         </div>
     </div>
 
-    <!-- Tiered Rewards Podium -->
-    <div class="bonus-section">
-        <h3>Milestone Rewards</h3>
-        <div class="tier-row bronze">
-            <span class="tier-name">Bronze Tier</span>
-            <span class="tier-desc">Work 6 Hours</span>
-            <span class="tier-bonus">+ £2 Bonus</span>
-        </div>
-        <div class="tier-row silver">
-            <span class="tier-name">Silver Tier</span>
-            <span class="tier-desc">Work 12 Hours</span>
-            <span class="tier-bonus">+ £5 Bonus</span>
-        </div>
-        <div class="tier-row gold">
-            <span class="tier-name">Gold Tier</span>
-            <span class="tier-desc">Work 24 Hours</span>
-            <span class="tier-bonus">+ £12 Bonus</span>
+    <!-- Milestone Bonus Windows -->
+    <div class="glass-window">
+        <h3>Milestone Bonus Tiers</h3>
+        <div class="tier-grid">
+            <div class="tier-box">
+                <span class="tier-title">Bronze Tier</span>
+                <span class="tier-desc">6 Hours Work</span>
+                <span class="tier-extra">+ £2 Bonus</span>
+            </div>
+            <div class="tier-box">
+                <span class="tier-title">Silver Tier</span>
+                <span class="tier-desc">12 Hours Work</span>
+                <span class="tier-extra">+ £5 Bonus</span>
+            </div>
+            <div class="tier-box gold">
+                <span class="tier-title">Gold Tier</span>
+                <span class="tier-desc">24 Hours Work</span>
+                <span class="tier-extra">+ £12 Bonus</span>
+            </div>
         </div>
     </div>
+
+    <!-- Action Button -->
+    <button class="join-btn">Enter Platform & Join Channels</button>
 </div>
 
 <style>
-.platform-board {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    border-radius: 6px; /* Sharp, clean modern edges */
-    padding: 24px;
-    max-width: 600px;
+.welcome-container {
+    background: #090d16;
+    padding: 30px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #e6edf3;
+    color: #f0f6fc;
+    max-width: 650px;
+    margin: 0 auto;
 }
-.board-header h2 {
-    margin: 0 0 4px 0;
-    font-size: 22px;
-    color: #ffffff;
-}
-.subtitle {
-    color: #8b949e;
-    font-size: 14px;
-    margin-bottom: 20px;
-}
-.metric-grid {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-.metric-card {
-    flex: 1;
-    background: #161b22;
+.glass-window {
+    background: #111622;
     border: 1px solid #30363d;
-    border-radius: 4px;
-    padding: 16px;
-    text-align: center;
-    font-size: 18px;
-    font-weight: 600;
+    border-radius: 8px; /* Sharp, clean modern edges */
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-.metric-card.highlight {
-    border-color: #f0b429;
+.welcome-banner h2 {
+    color: #ffffff;
+    margin-top: 0;
+    font-size: 24px;
 }
-.pay-block {
-    color: #2ea043;
-    margin-left: 8px;
-}
-.bonus-section h3 {
-    font-size: 16px;
-    margin-bottom: 12px;
+.welcome-banner p {
     color: #8b949e;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+.glass-window h3 {
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    color: #8b949e;
+    margin-top: 0;
+    margin-bottom: 12px;
 }
-.tier-row {
+.rate-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 4px;
     padding: 12px 16px;
+    border-radius: 6px;
     margin-bottom: 8px;
-    font-size: 15px;
+    font-weight: 600;
 }
-.tier-row.gold {
+.rate-row.highlight {
+    border: 1px solid #f0b429;
+}
+.value {
+    color: #2ea043;
+    font-size: 18px;
+}
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.tier-box {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+}
+.tier-box.gold {
     border-color: #f0b429;
 }
-.tier-name {
+.tier-title {
+    display: block;
     font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
 }
-.tier-bonus {
+.tier-desc {
+    display: block;
+    font-size: 12px;
+    color: #8b949e;
+    margin-bottom: 8px;
+}
+.tier-extra {
+    display: block;
+    font-size: 13px;
     color: #f0b429;
     font-weight: bold;
+}
+.join-btn {
+    width: 100%;
+    background: #238636;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+.join-btn:hover {
+    background: #2ea043;
 }
 </style>
