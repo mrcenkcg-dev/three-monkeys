@@ -1,60 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three Monkeys - Amazon Tech Deals Scanner</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; text-align: center; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .deal-card { background: #1e1e1e; border: 1px solid #333; margin: 15px 0; padding: 15px; border-radius: 8px; text-align: left; }
-        .deal-title { font-size: 1.2em; font-weight: bold; color: #f39c12; }
-        .price { color: #2ecc71; font-weight: bold; }
-        .original-price { text-decoration: line-through; color: #888; margin-right: 10px; }
-        .discount { background: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
-        .ad-container { margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Three Monkeys - Tech Deals Scanner</h1>
-        <p>Live Automated Tech Deals & Curated Offers</p>
-
-        <!-- A-Ads Banner Unit #2454491 -->
-        <div class="ad-container">
-            <iframe data-aa='2454491' src='//ad.a-ads.com/2454491?size=728x90' style='width:728px; height:90px; border:0px; padding:0; overflow:hidden; background-color: transparent;'></iframe>
-        </div>
-
-        <div id="deals-list">Loading latest tech deals...</div>
+<div class="platform-board">
+    <!-- Header -->
+    <div class="board-header">
+        <h2>Live Task Station</h2>
+        <p class="subtitle">Global Output & Reward Schedule</p>
     </div>
 
-    <script>
-        async function fetchDeals() {
-            try {
-                const response = await fetch('/api/deals');
-                const deals = await response.json();
-                const container = document.getElementById('deals-list');
-                container.innerHTML = '';
+    <!-- Core Math Grid -->
+    <div class="metric-grid">
+        <div class="metric-card">
+            <span class="time-block">1 Hour</span>
+            <span class="equals">=</span>
+            <span class="pay-block">£1</span>
+        </div>
+        <div class="metric-card highlight">
+            <span class="time-block">24 Hours</span>
+            <span class="equals">=</span>
+            <span class="pay-block">£24</span>
+        </div>
+    </div>
 
-                deals.forEach(deal => {
-                    const card = document.createElement('div');
-                    card.className = 'deal-card';
-                    card.innerHTML = `
-                        <div class="deal-title">${deal.title} <span class="discount">${deal.discount}</span></div>
-                        <p>Category: ${deal.category}</p>
-                        <p>
-                            Price: <span class="original-price">${deal.originalPrice}</span>
-                            <span class="price">${deal.dealPrice}</span>
-                        </p>
-                        <a href="https://www.amazon.co.uk/?tag=${deal.tag}" target="_blank" style="color: #3498db;">View Deal on Amazon</a>
-                    `;
-                    container.appendChild(card);
-                });
-            } catch (err) {
-                console.error("Error fetching deals:", err);
-            }
-        }
-        fetchDeals();
-    </script>
-</body>
-</html>
+    <!-- Tiered Rewards Podium -->
+    <div class="bonus-section">
+        <h3>Milestone Rewards</h3>
+        <div class="tier-row bronze">
+            <span class="tier-name">Bronze Tier</span>
+            <span class="tier-desc">Work 6 Hours</span>
+            <span class="tier-bonus">+ £2 Bonus</span>
+        </div>
+        <div class="tier-row silver">
+            <span class="tier-name">Silver Tier</span>
+            <span class="tier-desc">Work 12 Hours</span>
+            <span class="tier-bonus">+ £5 Bonus</span>
+        </div>
+        <div class="tier-row gold">
+            <span class="tier-name">Gold Tier</span>
+            <span class="tier-desc">Work 24 Hours</span>
+            <span class="tier-bonus">+ £12 Bonus</span>
+        </div>
+    </div>
+</div>
+
+<style>
+.platform-board {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px; /* Sharp, clean modern edges */
+    padding: 24px;
+    max-width: 600px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #e6edf3;
+}
+.board-header h2 {
+    margin: 0 0 4px 0;
+    font-size: 22px;
+    color: #ffffff;
+}
+.subtitle {
+    color: #8b949e;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+.metric-grid {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.metric-card {
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 16px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+.metric-card.highlight {
+    border-color: #f0b429;
+}
+.pay-block {
+    color: #2ea043;
+    margin-left: 8px;
+}
+.bonus-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.tier-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+.tier-row.gold {
+    border-color: #f0b429;
+}
+.tier-name {
+    font-weight: bold;
+}
+.tier-bonus {
+    color: #f0b429;
+    font-weight: bold;
+}
+</style>
