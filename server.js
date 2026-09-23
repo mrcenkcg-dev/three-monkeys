@@ -1,5 +1,5 @@
 /**
- * Sovereign Engine: Ultimate A to Z Master Build
+ * Sovereign Engine: Ultimate A to Z Master Build (Upgraded Edition)
  * Fully Integrated: Core Engine, Live Probability Math, Treasury Vault, 
  * Monzo Banking API, Hardware Mining, Sufi Culture & Poetry, Hybrid Social, & Public Portal.
  */
@@ -416,7 +416,7 @@ app.get('/island', microFeeTollGate('$0.001'), (req, res) => {
                         <div class="card">
                             <h2>⚽ Upcoming Süper Lig Fixtures & Live Probability Analysis</h2>
                             <table>
-                               <thead>
+                                <thead>
                                     <tr>
                                         <th>Fixture & Venue</th>
                                         <th>Date & Time</th>
@@ -452,20 +452,53 @@ app.get('/island', microFeeTollGate('$0.001'), (req, res) => {
     });
 });
 
-// 7. Additional Library and Stack Management Views
+// 7. Upgraded Library and Stack Management Views
 app.get('/library', (req, res) => {
     db.all(`SELECT * FROM library_stacks`, [], (err, stacks) => {
         res.send(`
         <!DOCTYPE html>
         <html lang="en">
-        <head><meta charset="UTF-8"><title>Library Stacks</title>
-        <style>body { font-family: sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }</style></head>
+        <head>
+            <meta charset="UTF-8"><title>Sovereign Library Stacks</title>
+            <style>
+                body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }
+                .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #22c55e; display: flex; justify-content: space-between; align-items: center; }
+                h1 { color: #22c55e; font-size: 20px; margin: 0; }
+                .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
+                .btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; border: 1px solid #3f3f46; }
+                ul { padding-left: 20px; color: #94a3b8; font-size: 13px; line-height: 1.8; }
+                input, textarea { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 12px; background: #1c1c1c; border: 1px solid #333; color: #fff; border-radius: 8px; }
+                button { background: #22c55e; color: #000; font-weight: bold; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+            </style>
+        </head>
         <body>
-            <h1>📚 Sovereign Library Stacks</h1>
-            <a href="/" style="color: #22c55e;">&larr; Home</a>
-            <ul>
-                ${stacks ? stacks.map(s => `<li><b>${s.section_category}:</b> ${s.item_title} -${s.content_summary}</li>`).join('') : ''}
-            </ul>
+            <div class="container">
+                <header>
+                    <h1>📚 Sovereign Library Stacks Catalog</h1>
+                    <a href="/" class="btn">&larr; Command Center</a>
+                </header>
+                <div class="card">
+                    <h2>Ingest New Stack Record</h2>
+                    <form action="/api/library/ingest" method="POST">
+                        <label>Section Category:</label>
+                        <input type="text" name="section_category" placeholder="e.g. Core Engine, Banking API" required>
+                        <label>Item Title:</label>
+                        <input type="text" name="item_title" placeholder="Record Title" required>
+                        <label>Source Reference:</label>
+                        <input type="text" name="source_reference" placeholder="Reference URL or Path">
+                        <label>Content Summary:</label>
+                        <textarea name="content_summary" rows="3" placeholder="Summary details..." required></textarea>
+                        <button type="submit">Ingest into Library</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Indexed Stacks</h2>
+                    <ul>
+                        ${stacks ? stacks.map(s => `<li><b>[${s.section_category}]</b>${s.item_title} &mdash; <span style="color:#fff;">${s.content_summary}</span> (<span style="color:#22c55e">${s.status}</span>)</li>`).join('') : ''}
+                    </ul>
+                </div>
+            </div>
         </body>
         </html>`);
     });
@@ -476,14 +509,49 @@ app.get('/library/hardware', (req, res) => {
         res.send(`
         <!DOCTYPE html>
         <html lang="en">
-        <head><meta charset="UTF-8"><title>Hardware Miners</title>
-        <style>body { font-family: sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }</style></head>
+        <head>
+            <meta charset="UTF-8"><title>Hardware Miners Fleet</title>
+            <style>
+                body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }
+                .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #22c55e; display: flex; justify-content: space-between; align-items: center; }
+                h1 { color: #22c55e; font-size: 20px; margin: 0; }
+                .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
+                .btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; border: 1px solid #3f3f46; }
+                ul { padding-left: 20px; color: #94a3b8; font-size: 13px; line-height: 1.8; }
+                input { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 12px; background: #1c1c1c; border: 1px solid #333; color: #fff; border-radius: 8px; }
+                button { background: #22c55e; color: #000; font-weight: bold; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+            </style>
+        </head>
         <body>
-            <h1>⚡ Hardware Miners Fleet</h1>
-            <a href="/" style="color: #22c55e;">&larr; Home</a>
-            <ul>
-                ${miners ? miners.map(m => `<li><b>${m.device_name} (${m.device_model}):</b> Hash:${m.hash_rate}, Power: ${m.power_draw}, Est:${m.earnings_est}</li>`).join('') : ''}
-            </ul>
+            <div class="container">
+                <header>
+                    <h1>⚡ Hardware Miners Fleet</h1>
+                    <a href="/" class="btn">&larr; Command Center</a>
+                </header>
+                <div class="card">
+                    <h2>Register New Hardware Node</h2>
+                    <form action="/api/hardware/add" method="POST">
+                        <label>Device Name:</label>
+                        <input type="text" name="device_name" placeholder="e.g. Helium Node Gamma" required>
+                        <label>Device Model:</label>
+                        <input type="text" name="device_model" placeholder="e.g. Panther X2 Gateway" required>
+                        <label>Hash Rate / Channels:</label>
+                        <input type="text" name="hash_rate" placeholder="e.g. 9.2 dBi / 160 MH/s" required>
+                        <label>Power Draw:</label>
+                        <input type="text" name="power_draw" placeholder="e.g. 5W Low Power" required>
+                        <label>Estimated Daily Earnings:</label>
+                        <input type="text" name="earnings_est" placeholder="e.g. $1.45 / day">
+                        <button type="submit">Deploy Hardware Node</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Active Fleet Status</h2>
+                    <ul>
+                        ${miners ? miners.map(m => `<li><b>${m.device_name} (${m.device_model})</b> &mdash; Hash:${m.hash_rate}, Power: ${m.power_draw}, Est:${m.earnings_est} (<span style="color:#22c55e">${m.status}</span>)</li>`).join('') : ''}
+                    </ul>
+                </div>
+            </div>
         </body>
         </html>`);
     });
@@ -494,14 +562,47 @@ app.get('/library/culture', (req, res) => {
         res.send(`
         <!DOCTYPE html>
         <html lang="en">
-        <head><meta charset="UTF-8"><title>Sufi Culture Queue</title>
-        <style>body { font-family: sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }</style></head>
+        <head>
+            <meta charset="UTF-8"><title>Sufi Culture Queue</title>
+            <style>
+                body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }
+                .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #22c55e; display: flex; justify-content: space-between; align-items: center; }
+                h1 { color: #22c55e; font-size: 20px; margin: 0; }
+                .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
+                .btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; border: 1px solid #3f3f46; }
+                ul { padding-left: 20px; color: #94a3b8; font-size: 13px; line-height: 1.8; }
+                input, textarea { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 12px; background: #1c1c1c; border: 1px solid #333; color: #fff; border-radius: 8px; }
+                button { background: #22c55e; color: #000; font-weight: bold; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+            </style>
+        </head>
         <body>
-            <h1>🎵 Sufi Poetry & Culture Queue</h1>
-            <a href="/" style="color: #22c55e;">&larr; Home</a>
-            <ul>
-                ${verses ? verses.map(v => `<li><b>${v.poet_name} -${v.verse_title}:</b> "${v.verse_text}" [${v.musical_arrangement}]</li>`).join('') : ''}
-            </ul>
+            <div class="container">
+                <header>
+                    <h1>🎵 Sufi Poetry & Culture Queue</h1>
+                    <a href="/" class="btn">&larr; Command Center</a>
+                </header>
+                <div class="card">
+                    <h2>Queue New Poetry & Arrangement</h2>
+                    <form action="/api/culture/add" method="POST">
+                        <label>Poet Name:</label>
+                        <input type="text" name="poet_name" value="Yunus Emre" required>
+                        <label>Verse Title:</label>
+                        <input type="text" name="verse_title" placeholder="Verse Title" required>
+                        <label>Verse Text:</label>
+                        <textarea name="verse_text" rows="3" placeholder="Poem snippet..." required></textarea>
+                        <label>Musical Arrangement:</label>
+                        <input type="text" name="musical_arrangement" placeholder="e.g. Anatolian Psychedelic Rock (Bağlama + Synth)" required>
+                        <button type="submit">Queue for Render Pipeline</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Culture & Render Queue</h2>
+                    <ul>
+                        ${verses ? verses.map(v => `<li><b>${v.poet_name} &mdash; ${v.verse_title}:</b> "${v.verse_text}" [<em>${v.musical_arrangement}</em>] (<span style="color:#22c55e">${v.video_status}</span>)</li>`).join('') : ''}
+                    </ul>
+                </div>
+            </div>
         </body>
         </html>`);
     });
@@ -512,12 +613,39 @@ app.get('/library/banking', (req, res) => {
         res.send(`
         <!DOCTYPE html>
         <html lang="en">
-        <head><meta charset="UTF-8"><title>Monzo Banking API</title>
-        <style>body { font-family: sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }</style></head>
+        <head>
+            <meta charset="UTF-8"><title>Monzo Banking API</title>
+            <style>
+                body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 30px; }
+                .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #22c55e; display: flex; justify-content: space-between; align-items: center; }
+                h1 { color: #22c55e; font-size: 20px; margin: 0; }
+                .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
+                .btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; border: 1px solid #3f3f46; }
+                input { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 12px; background: #1c1c1c; border: 1px solid #333; color: #fff; border-radius: 8px; }
+                button { background: #22c55e; color: #000; font-weight: bold; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+            </style>
+        </head>
         <body>
-            <h1>💳 Monzo Banking Bridge</h1>
-            <a href="/" style="color: #22c55e;">&larr; Home</a>
-            <p>Status: <b>${config ? config.sync_status : 'STANDBY'}</b></p>
+            <div class="container">
+                <header>
+                    <h1>💳 Monzo Banking Bridge</h1>
+                    <a href="/" class="btn">&larr; Command Center</a>
+                </header>
+                <div class="card">
+                    <h2>Configure Monzo Developer Credentials</h2>
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Current Sync Status: <b style="color: #22c55e;">${config ? config.sync_status : 'STANDBY'}</b></p>
+                    <form action="/api/monzo/configure" method="POST">
+                        <label>Monzo Access Token:</label>
+                        <input type="password" name="access_token" value="${config ? config.access_token : ''}" placeholder="Bearer Token">
+                        <label>Account ID:</label>
+                        <input type="text" name="account_id" value="${config ? config.account_id : ''}" placeholder="Account Identifier">
+                        <label>Target Threshold Payout ($):</label>
+                        <input type="number" step="0.01" name="target_threshold" value="${config ? config.target_threshold : 10.00}">
+                        <button type="submit">Save & Activate Bridge</button>
+                    </form>
+                </div>
+            </div>
         </body>
         </html>`);
     });
