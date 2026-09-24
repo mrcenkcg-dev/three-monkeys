@@ -1,7 +1,7 @@
 {
   "name": "three-monkeys",
   "version": "1.0.0",
-  "description": "Automated RSS deal aggregator, database, and payment engine",
+  "description": "Unified Sovereign Master Engine with Video Studio, Stripe & Affiliate Tracking",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
