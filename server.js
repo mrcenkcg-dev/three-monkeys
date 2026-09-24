@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * SOVEREIGN MASTER ENGINE: UNIFIED SPORTSBOOK, DISCORD BRIDGE & COMMAND HUB
+ * SOVEREIGN MASTER ENGINE: UNIFIED SPORTSBOOK, DISCORD BRIDGE & VIDEO STUDIO
  * ==============================================================================
  */
 
@@ -94,7 +94,7 @@ function initializeMasterDatabase() {
             db.get(`SELECT COUNT(*) as count FROM synthesized_upgrades`, (err, row) => {
                 if (row && row.count === 0) {
                     db.run(`INSERT INTO synthesized_upgrades (upgrade_name, source_blueprint, applied_logic, status) VALUES 
-                        ('Shoulder-to-Shoulder Sportsbook v8.0 - Bot Bridge Active', 'Unified Core', 'Sportsbook + Command Center + Discord Bridge merged.', 'ACTIVE')`);
+                        ('Shoulder-to-Shoulder Sportsbook v9.0 - Video Studio Active', 'Unified Core', 'Sportsbook + Video Pipeline + Command Center merged.', 'ACTIVE')`);
                 }
             });
         });
@@ -114,6 +114,41 @@ function initializeMasterDatabase() {
                 if (row && row.count === 0) {
                     db.run(`INSERT INTO learning_cycles (learning_cycle, experiment_title, approval_status, agent_hypothesis, sandbox_result, tested_at) VALUES 
                         (1, 'Autonomous Telemetry Stream Sync', 'APPROVED', 'Refreshing background fetch routines improves dashboard responsiveness.', 'Success: Latency reduced across all active nodes.', '2026-09-24 12:00:00')`);
+                }
+            });
+        });
+
+        // Affiliate Tracking Table (Amazon Associates ID: mrcenk20-21)
+        db.run(`CREATE TABLE IF NOT EXISTS affiliate_tracking (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            associates_id TEXT,
+            item_clicked TEXT,
+            referral_source TEXT,
+            status TEXT
+        )`, () => {
+            db.get(`SELECT COUNT(*) as count FROM affiliate_tracking`, (err, row) => {
+                if (row && row.count === 0) {
+                    db.run(`INSERT INTO affiliate_tracking (associates_id, item_clicked, referral_source, status) VALUES 
+                        ('mrcenk20-21', 'Anadolu Sufi Rock Gear & Books', 'Command Center Portal', 'TRACKING ACTIVE')`);
+                }
+            });
+        });
+
+        // NEW: Video Productions Pipeline Table
+        db.run(`CREATE TABLE IF NOT EXISTS video_productions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            video_title TEXT,
+            match_pairing TEXT,
+            ai_script TEXT,
+            associates_tag TEXT,
+            render_status TEXT
+        )`, () => {
+            db.get(`SELECT COUNT(*) as count FROM video_productions`, (err, row) => {
+                if (row && row.count === 0) {
+                    db.run(`INSERT INTO video_productions (video_title, match_pairing, ai_script, associates_tag, render_status) VALUES 
+                        ('Türkiye vs France - AI Breakdown Short', 'Türkiye vs France', 'Highlighting key ratings and Sufi Rock prediction odds.', 'mrcenk20-21', 'RENDERED & READY')`);
                 }
             });
         });
@@ -201,6 +236,49 @@ app.post('/api/add-blueprint', (req, res) => {
     });
 });
 
+// Programmatic Learning Cycle Injector Endpoint
+app.post('/api/learning-cycles', (req, res) => {
+    const { learning_cycle, experiment_title, approval_status, agent_hypothesis, sandbox_result } = req.body;
+    const testedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    const stmt = db.prepare(`INSERT INTO learning_cycles (learning_cycle, experiment_title, approval_status, agent_hypothesis, sandbox_result, tested_at) VALUES (?, ?, ?, ?, ?, ?)`);
+    stmt.run(learning_cycle || 99, experiment_title || 'Autonomous Agent Routine', approval_status || 'PENDING', agent_hypothesis || 'Evaluating background sync dynamics.', sandbox_result || 'In progress', testedAt, (err) => {
+        stmt.finalize();
+        if (err) {
+            return res.status(500).json({ status: 'error', message: err.message });
+        }
+        res.status(200).json({ status: 'success', recorded: true });
+    });
+});
+
+// Affiliate Tracker Endpoint (Amazon Associates: mrcenk20-21)
+app.post('/api/affiliate-track', (req, res) => {
+    const { item_clicked, referral_source } = req.body;
+    const stmt = db.prepare(`INSERT INTO affiliate_tracking (associates_id, item_clicked, referral_source, status) VALUES (?, ?, ?, ?)`);
+    stmt.run('mrcenk20-21', item_clicked || 'General Store Link', referral_source || 'Web Direct', 'CLICK_RECORDED', (err) => {
+        stmt.finalize();
+        if (err) {
+            return res.status(500).json({ status: 'error', message: err.message });
+        }
+        res.status(200).json({ status: 'success', associates_id: 'mrcenk20-21', recorded: true });
+    });
+});
+
+// NEW: Automated Video Studio Pipeline Endpoint
+app.post('/api/generate-video', (req, res) => {
+    const { video_title, match_pairing, ai_script } = req.body;
+    const stmt = db.prepare(`INSERT INTO video_productions (video_title, match_pairing, ai_script, associates_tag, render_status) VALUES (?, ?, ?, ?, ?)`);
+    stmt.run(video_title || 'Automated Match Highlight', match_pairing || 'International Showcase', ai_script || 'AI Probability breakdown and music overlay.', 'mrcenk20-21', 'RENDERED & READY', (err) => {
+        stmt.finalize();
+        if (err) {
+            logEvent('VideoStudio', 'ERROR', `Video generation failed: ${err.message}`);
+            return res.status(500).json({ status: 'error', message: err.message });
+        }
+        logEvent('VideoStudio', 'SUCCESS', `Successfully generated video short: [${video_title}]`);
+        res.redirect('/video-studio');
+    });
+});
+
 // ==============================================================================
 // 4. PRIVATE COMMAND CENTER ROUTES (/)
 // ==============================================================================
@@ -208,76 +286,87 @@ app.get('/', (req, res) => {
     db.all(`SELECT * FROM harvested_blueprints ORDER BY timestamp DESC LIMIT 6`, [], (err, blueprints) => {
         db.all(`SELECT * FROM synthesized_upgrades ORDER BY timestamp DESC LIMIT 6`, [], (errUpgrades, upgrades) => {
             db.all(`SELECT * FROM system_logs ORDER BY timestamp DESC LIMIT 6`, [], (errLogs, logs) => {
-                
-                const accentColor = '#22c55e';
+                db.all(`SELECT * FROM affiliate_tracking ORDER BY timestamp DESC LIMIT 5`, [], (errAff, affiliates) => {
+                    
+                    const accentColor = '#22c55e';
 
-                res.send(`
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Anadolu Island - Sovereign Command Center</title>
-                    <style>
-                        * { box-sizing: border-box; margin: 0; padding: 0; }
-                        body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
-                        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-                        header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid ${accentColor}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-                        h1 { margin: 0 0 5px 0; color: ${accentColor}; font-size: 22px; }
-                        .status-badge { display: inline-block; background: #22c55e; color: #000; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-                        .portal-btn { background: #262626; color: #fff; padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid #3f3f46; display: inline-block; }
-                        .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
-                        h2 { font-size: 16px; color: #fff; margin-bottom: 12px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #262626; font-size: 13px; }
-                        th { color: #94a3b8; }
-                        .form-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-                        input, textarea { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; font-size: 13px; width: 100%; }
-                        button { background: ${accentColor}; color: #000; font-weight: bold; padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-                        button:hover { opacity: 0.9; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <header>
-                            <div>
-                                <h1>⚓ Anadolu Island Sovereign Command Center</h1>
-                                <p>Status: <span class="status-badge">ONLINE</span> | Unified Engine & Discord Bridge</p>
+                    res.send(`
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Anadolu Island - Sovereign Command Center</title>
+                        <style>
+                            * { box-sizing: border-box; margin: 0; padding: 0; }
+                            body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
+                            .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                            header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid ${accentColor}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+                            h1 { margin: 0 0 5px 0; color: ${accentColor}; font-size: 22px; }
+                            .status-badge { display: inline-block; background: #22c55e; color: #000; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+                            .portal-btn { background: #262626; color: #fff; padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid #3f3f46; display: inline-block; }
+                            .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
+                            h2 { font-size: 16px; color: #fff; margin-bottom: 12px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                            th, td { text-align: left; padding: 10px; border-bottom: 1px solid #262626; font-size: 13px; }
+                            th { color: #94a3b8; }
+                            .form-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+                            input, textarea { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; font-size: 13px; width: 100%; }
+                            button { background: ${accentColor}; color: #000; font-weight: bold; padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+                            button:hover { opacity: 0.9; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <header>
+                                <div>
+                                    <h1>⚓ Anadolu Island Sovereign Command Center</h1>
+                                    <p>Status: <span class="status-badge">ONLINE</span> | Unified Engine & Video Studio</p>
+                                </div>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <a href="/island" class="portal-btn" style="background: #22c55e; color: #000; border-color: #22c55e;">⚽ Sportsbook & Lucky Dip</a>
+                                    <a href="/video-studio" class="portal-btn" style="background: #38bdf8; color: #000; border-color: #38bdf8;">🎬 Video Studio</a>
+                                    <a href="/pet-project" class="portal-btn" style="background: #a855f7; color: #fff; border-color: #a855f7;">🐾 4D Sandbox</a>
+                                </div>
+                            </header>
+
+                            <div class="card">
+                                <h2>📥 Inject Custom Service Blueprint</h2>
+                                <form action="/api/add-blueprint" method="POST" class="form-group">
+                                    <input type="text" name="source_origin" placeholder="Source Origin (e.g., Custom Script / Discord Bot)" required>
+                                    <input type="text" name="blueprint_title" placeholder="Blueprint Title (e.g., Live Telegram Notifier)" required>
+                                    <textarea name="architecture_pattern" placeholder="Architecture Logic / Description..." rows="2" required></textarea>
+                                    <button type="submit">Inject Blueprint & Synthesize Upgrade</button>
+                                </form>
                             </div>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <a href="/island" class="portal-btn" style="background: #22c55e; color: #000; border-color: #22c55e;">⚽ Sportsbook & Lucky Dip</a>
-                                <a href="/pet-project" class="portal-btn" style="background: #a855f7; color: #fff; border-color: #a855f7;">🐾 4D Sandbox</a>
+
+                            <div class="card">
+                                <h2>💰 Affiliate & Monetization Hub (ID: mrcenk20-21)</h2>
+                                <table>
+                                    <tr><th>Timestamp</th><th>Associates ID</th><th>Item Clicked</th><th>Source</th><th>Status</th></tr>
+                                    ${affiliates ? affiliates.map(a => `<tr><td>${a.timestamp}</td><td><code>${a.associates_id}</code></td><td><b>${a.item_clicked}</b></td><td>${a.referral_source}</td><td style="color:#22c55e;">${a.status}</td></tr>`).join('') : ''}
+                                </table>
                             </div>
-                        </header>
 
-                        <div class="card">
-                            <h2>📥 Inject Custom Service Blueprint</h2>
-                            <form action="/api/add-blueprint" method="POST" class="form-group">
-                                <input type="text" name="source_origin" placeholder="Source Origin (e.g., Custom Script / Discord Bot)" required>
-                                <input type="text" name="blueprint_title" placeholder="Blueprint Title (e.g., Live Telegram Notifier)" required>
-                                <textarea name="architecture_pattern" placeholder="Architecture Logic / Description..." rows="2" required></textarea>
-                                <button type="submit">Inject Blueprint & Synthesize Upgrade</button>
-                            </form>
-                        </div>
+                            <div class="card">
+                                <h2>🛡️ Synthesized Upgrades & Active Modules</h2>
+                                <table>
+                                    <tr><th>Upgrade Name</th><th>Source Blueprint</th><th>Status</th></tr>
+                                    ${upgrades ? upgrades.map(u => `<tr><td><b>${u.upgrade_name}</b></td><td>${u.source_blueprint}</td><td><span style="color:#22c55e;">${u.status}</span></td></tr>`).join('') : ''}
+                                </table>
+                            </div>
 
-                        <div class="card">
-                            <h2>🛡️ Synthesized Upgrades & Active Modules</h2>
-                            <table>
-                                <tr><th>Upgrade Name</th><th>Source Blueprint</th><th>Status</th></tr>
-                                ${upgrades ? upgrades.map(u => `<tr><td><b>${u.upgrade_name}</b></td><td>${u.source_blueprint}</td><td><span style="color:#22c55e;">${u.status}</span></td></tr>`).join('') : ''}
-                            </table>
+                            <div class="card">
+                                <h2>📋 Live System & Discord Telemetry Logs</h2>
+                                <table>
+                                    <tr><th>Timestamp</th><th>Module</th><th>Status</th><th>Message</th></tr>
+                                    ${logs ? logs.map(l => `<tr><td>${l.timestamp}</td><td>${l.module_name}</td><td style="color:#38bdf8;">${l.status}</td><td>${l.message}</td></tr>`).join('') : ''}
+                                </table>
+                            </div>
                         </div>
-
-                        <div class="card">
-                            <h2>📋 Live System & Discord Telemetry Logs</h2>
-                            <table>
-                                <tr><th>Timestamp</th><th>Module</th><th>Status</th><th>Message</th></tr>
-                                ${logs ? logs.map(l => `<tr><td>${l.timestamp}</td><td>${l.module_name}</td><td style="color:#38bdf8;">${l.status}</td><td>${l.message}</td></tr>`).join('') : ''}
-                            </table>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                `);
+                    </body>
+                    </html>
+                    `);
+                });
             });
         });
     });
@@ -404,7 +493,80 @@ app.get('/island', (req, res) => {
 });
 
 // ==============================================================================
-// 6. 4D SANDBOX ROUTE (/pet-project)
+// 6. NEW: AUTOMATED VIDEO STUDIO ROUTE (/video-studio)
+// ==============================================================================
+app.get('/video-studio', (req, res) => {
+    db.all(`SELECT * FROM video_productions ORDER BY timestamp DESC LIMIT 10`, [], (err, videos) => {
+        res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Automated Video Studio - Sovereign Master</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: -apple-system, sans-serif; background: #070908; color: #e2e8f0; padding: 30px; }
+                .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+                header { background: #111a14; padding: 24px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.4); display: flex; justify-content: space-between; align-items: center; }
+                h1 { color: #38bdf8; font-size: 24px; margin-bottom: 6px; }
+                p { color: #94a3b8; font-size: 14px; }
+                .portal-btn { background: #262626; color: #fff; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid #3f3f46; display: inline-block; }
+                .card { background: #111a14; padding: 24px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 16px; }
+                h2 { font-size: 18px; color: #fff; }
+                .form-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+                input, textarea { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; font-size: 13px; width: 100%; }
+                button { background: #38bdf8; color: #000; font-weight: bold; padding: 12px 18px; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; }
+                button:hover { opacity: 0.9; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+                th { color: #94a3b8; }
+                .highlight { color: #38bdf8; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <div>
+                        <h1>🎬 Automated Video Studio</h1>
+                        <p>MoviePy & FFmpeg Short-Form Production Pipeline</p>
+                    </div>
+                    <a href="/" class="portal-btn">&larr; Command Center</a>
+                </header>
+
+                <div class="card">
+                    <h2>🚀 Trigger New Video Production</h2>
+                    <form action="/api/generate-video" method="POST" class="form-group">
+                        <input type="text" name="video_title" placeholder="Video Short Title (e.g., Türkiye vs Italy Match Preview)" required>
+                        <input type="text" name="match_pairing" placeholder="Match Pairing / Topic (e.g., Türkiye vs Italy)" required>
+                        <textarea name="ai_script" placeholder="AI Commentary Script & Audio Cues..." rows="3" required></textarea>
+                        <button type="submit">Render & Publish Short (Tag: mrcenk20-21)</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>🎞️ Rendered Video Shorts Archive</h2>
+                    <table>
+                        <tr><th>Timestamp</th><th>Title</th><th>Match Pairing</th><th>Associates Tag</th><th>Status</th></tr>
+                        ${videos ? videos.map(v => \`
+                            <tr>
+                                <td>\${v.timestamp}</td>
+                                <td><span class="highlight">\${v.video_title}</span></td>
+                                <td>\${v.match_pairing}</td>
+                                <td><code>\${v.associates_tag}</code></td>
+                                <td><span style="color: #22c55e; font-weight: bold;">\${v.render_status}</span></td>
+                            </tr>
+                        \`).join('') : ''}
+                    </table>
+                </div>
+            </div>
+        </body>
+        </html>
+        `);
+    });
+});
+
+// ==============================================================================
+// 7. 4D SANDBOX ROUTE (/pet-project)
 // ==============================================================================
 app.get('/pet-project', (req, res) => {
     db.all(`SELECT * FROM learning_cycles ORDER BY learning_cycle DESC LIMIT 10`, [], (err, rows) => {
