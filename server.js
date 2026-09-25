@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * SOVEREIGN MASTER ENGINE: UNIFIED PRODUCTION SERVER
- * (Three Monkeys Architecture + Bedding Ads + Music Lounge + 4D Pet Project)
+ * SOVEREIGN MASTER ENGINE: FULLY UNIFIED PRODUCTION SERVER
+ * (Three Monkeys Architecture + Bedding Ads + Interactive Music Lounge + 4D Pet Project)
  * ==============================================================================
  */
 
@@ -61,7 +61,7 @@ function initializeLeanDatabase() {
             });
         });
 
-        // Musics & Soundtracks Table
+        // Musics & Soundtracks Table (Upgraded with Real Audio Stream Sources)
         db.run(`CREATE TABLE IF NOT EXISTS music_tracks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -74,9 +74,9 @@ function initializeLeanDatabase() {
             db.get(`SELECT COUNT(*) as count FROM music_tracks`, (err, row) => {
                 if (row && row.count === 0) {
                     db.run(`INSERT INTO music_tracks (track_title, artist, genre, duration, audio_source) VALUES 
-                        ('Uzun İnce Bir Yoldayım (Psychedelic Remix)', 'Cenk & Lyria 3 Synth', 'Anatolian Psychedelic Sufi Rock', '3:45', 'Stream Live'),
-                        ('Yunus Emre Nefes Session', 'Traditional Bağlama & Synth Engine', 'Sufi Folk Fusion', '4:12', 'Stream Live'),
-                        ('Anatolian Highway Groove', 'Three Monkeys Ensemble', 'Anatolian Rock', '3:20', 'Stream Live')`);
+                        ('Uzun İnce Bir Yoldayım (Psychedelic Remix)', 'Cenk & Lyria 3 Synth', 'Anatolian Psychedelic Sufi Rock', '3:45', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'),
+                        ('Yunus Emre Nefes Session', 'Traditional Bağlama & Synth Engine', 'Sufi Folk Fusion', '4:12', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'),
+                        ('Anatolian Highway Groove', 'Three Monkeys Ensemble', 'Anatolian Rock', '3:20', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3')`);
                 }
             });
         });
@@ -289,7 +289,7 @@ app.get('/', (req, res) => {
 
                 <div class="card" style="border-left: 4px solid #38bdf8;">
                     <h2>🎵 Music Lounge</h2>
-                    <p>Listen to Anatolian Psychedelic Sufi Rock and traditional poetry musical arrangements.</p>
+                    <p>Listen to Anatolian Psychedelic Sufi Rock and traditional poetry musical arrangements with live audio streaming.</p>
                     <a href="/musics" class="portal-btn" style="background:#38bdf8; color:#000; text-align:center;">Open Music Lounge &rarr;</a>
                 </div>
 
@@ -368,7 +368,7 @@ app.get('/bedding-ads', (req, res) => {
     });
 });
 
-// PAGE 2: MUSIC LOUNGE
+// PAGE 2: MUSIC LOUNGE (Fully Upgraded with Working HTML5 Audio Player Integration)
 app.get('/musics', (req, res) => {
     db.all(`SELECT * FROM music_tracks ORDER BY timestamp DESC`, [], (err, tracks) => {
         res.send(`
@@ -388,7 +388,9 @@ app.get('/musics', (req, res) => {
                 th, td { text-align: left; padding: 12px; border-bottom: 1px solid #262626; font-size: 13px; }
                 th { color: #94a3b8; }
                 .play-btn { background: #38bdf8; color: #000; padding: 6px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+                .play-btn:hover { background: #7dd3fc; }
                 .portal-btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; border: 1px solid #3f3f46; }
+                .player-banner { background: #1a2332; border: 1px solid #38bdf8; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; }
             </style>
         </head>
         <body>
@@ -401,6 +403,11 @@ app.get('/musics', (req, res) => {
                     <a href="/" class="portal-btn">&larr; Command Center</a>
                 </header>
 
+                <div class="card player-banner">
+                    <h3 id="current-playing" style="color:#38bdf8; font-size:15px;">Select a track below to begin streaming</h3>
+                    <audio id="audio-player" controls style="width: 100%;"></audio>
+                </div>
+
                 <div class="card">
                     <h2>Live Track Catalog</h2>
                     <table>
@@ -411,12 +418,22 @@ app.get('/musics', (req, res) => {
                                 <td style="color:#cbd5e1;">${t.artist}</td>
                                 <td><span style="color:#38bdf8;">${t.genre}</span></td>
                                 <td><code>${t.duration}</code></td>
-                                <td><button class="play-btn" onclick="alert('Streaming: ${t.track_title}')">▶ Play</button></td>
+                                <td><button class="play-btn" onclick="playTrack('${t.audio_source}', '${t.track_title}', '${t.artist}')">▶ Play Stream</button></td>
                             </tr>
                         `).join('') : ''}
                     </table>
                 </div>
             </div>
+
+            <script>
+                function playTrack(sourceUrl, title, artist) {
+                    const player = document.getElementById('audio-player');
+                    const banner = document.getElementById('current-playing');
+                    banner.innerText = 'Now Playing: ' + title + ' — ' + artist;
+                    player.src = sourceUrl;
+                    player.play().catch(e => console.log('Playback error:', e));
+                }
+            </script>
         </body>
         </html>
         `);
