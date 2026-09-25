@@ -1,8 +1,7 @@
 /**
  * ==============================================================================
- * SOVEREIGN MASTER ENGINE: THE ULTIMATE UNIFIED PLATFORM
- * (Anthropic Retail AI + Nvidia Vision Agents + Visa Agentic Commerce 
- * + Shopify Bedding Grid + Affiliate Injector + Anatolian Music Lounge)
+ * SOVEREIGN MASTER ENGINE: THE ULTIMATE MONOLITHIC PLATFORM
+ * (Bedding Storefront + AI Agents + Global Blueprints + Sufi Rock Lounge + Crypto Gate)
  * ==============================================================================
  */
 
@@ -19,19 +18,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ==============================================================================
-// 1. UNIFIED DATABASE SETUP & ALL BLUEPRINT SCHEMAS
+// 1. MASTER DATABASE SETUP & COMPREHENSIVE SCHEMAS
 // ==============================================================================
 const dbFile = path.join(__dirname, 'sovereign_master.db');
 const db = new sqlite3.Database(dbFile, (err) => {
     if (err) {
         console.error('❌ Database connection error:', err.message);
     } else {
-        console.log('✅ Connected to Ultimate Sovereign Master DB.');
-        initializeUltimateDatabase();
+        console.log('✅ Connected to Ultimate Monolithic Sovereign DB.');
+        initializeMonolithicDatabase();
     }
 });
 
-function initializeUltimateDatabase() {
+function initializeMonolithicDatabase() {
     db.serialize(() => {
         // System Logs Table
         db.run(`CREATE TABLE IF NOT EXISTS system_logs (
@@ -42,18 +41,17 @@ function initializeUltimateDatabase() {
             message TEXT
         )`);
 
-        // 1. Anthropic & Nvidia AI Agent Blueprints Table
+        // 1. Anthropic & Nvidia AI Agent Blueprints
         db.run(`CREATE TABLE IF NOT EXISTS ai_agent_blueprints (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            agent_name TEXT,
+            agent_name TEXT UNIQUE,
             framework_source TEXT,
-            capability_desc TEXT,
-            status TEXT DEFAULT 'ACTIVE'
+            capability_desc TEXT
         )`, () => {
             db.get(`SELECT COUNT(*) as count FROM ai_agent_blueprints`, (err, row) => {
                 if (row && row.count === 0) {
-                    db.run(`INSERT INTO ai_agent_blueprints (agent_name, framework_source, capability_desc) VALUES 
+                    db.run(`INSERT OR IGNORE INTO ai_agent_blueprints (agent_name, framework_source, capability_desc) VALUES 
                         ('Retail Shopper Bot', 'Anthropic Retail Agent Blueprint', 'Autonomous shopping assistant for holiday and e-commerce product discovery.'),
                         ('Vision Guard Agent', 'Nvidia Vision AI Blueprint', 'Real-time computer vision analysis for store catalog and inventory telemetry.'),
                         ('Intelligent Commerce Node', 'Visa AWS Bedrock AgentCore', 'Secure micro-fee settlement and agentic checkout automation.')`);
@@ -61,11 +59,11 @@ function initializeUltimateDatabase() {
             });
         });
 
-        // 2. Shopify-Style Bedding & Retail Catalog (With Affiliate ID mrcenk20-21)
+        // 2. Shopify-Style Bedding Catalog (Affiliate ID mrcenk20-21)
         db.run(`CREATE TABLE IF NOT EXISTS retail_catalog (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            product_title TEXT,
+            product_title TEXT UNIQUE,
             category TEXT,
             price TEXT,
             affiliate_link TEXT,
@@ -73,7 +71,7 @@ function initializeUltimateDatabase() {
         )`, () => {
             db.get(`SELECT COUNT(*) as count FROM retail_catalog`, (err, row) => {
                 if (row && row.count === 0) {
-                    db.run(`INSERT INTO retail_catalog (product_title, category, price, affiliate_link, badge) VALUES 
+                    db.run(`INSERT OR IGNORE INTO retail_catalog (product_title, category, price, affiliate_link, badge) VALUES 
                         ('Bamboo Charcoal Infused Memory Foam Pillow (2-Pack)', 'Bedding', '$34.99', 'https://www.amazon.co.uk/dp/B00EXAMPLE?tag=mrcenk20-21', 'HOT DEAL'),
                         ('Himalayan Salt Crystal Bedside Sleep Lamp', 'Sleep Aid', '$24.50', 'https://www.amazon.co.uk/dp/B01EXAMPLE?tag=mrcenk20-21', 'NEW ARRIVAL'),
                         ('Turkish Organic Cotton Luxury Bed Robe', 'Apparel', '$45.00', 'https://www.amazon.co.uk/dp/B02EXAMPLE?tag=mrcenk20-21', 'BESTSELLER'),
@@ -86,35 +84,52 @@ function initializeUltimateDatabase() {
         db.run(`CREATE TABLE IF NOT EXISTS music_tracks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            track_title TEXT,
+            track_title TEXT UNIQUE,
             artist TEXT,
             genre TEXT,
             duration TEXT,
             audio_source TEXT
         )`, () => {
-            db.run(`DELETE FROM music_tracks`);
-            db.run(`INSERT INTO music_tracks (track_title, artist, genre, duration, audio_source) VALUES 
+            db.run(`INSERT OR IGNORE INTO music_tracks (track_title, artist, genre, duration, audio_source) VALUES 
                 ('Uzun İnce Bir Yoldayım (Sufi Ambient Mix)', 'Cenk & Lyria Synth Lab', 'Anatolian Psychedelic Sufi Rock', '3:45', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'),
                 ('Yunus Emre Nefes & Bağlama Groove', 'Anatolian Heritage Ensemble', 'Traditional Sufi Fusion', '4:12', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'),
                 ('Three Monkeys Highway Odyssey', 'Cenk & The Sovereign Crew', 'Anatolian Rock Instrumental', '3:20', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'),
                 ('Midnight Bosphorus Meditation', 'Sufi Synthesizer Project', 'Ambient Meditation', '5:00', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3')`);
         });
 
-        // 4. Global Scavenged Blueprints Deck
+        // 4. Global Scavenged Blueprints (Deduplicated)
         db.run(`CREATE TABLE IF NOT EXISTS global_blueprints (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            blueprint_title TEXT,
+            blueprint_title TEXT UNIQUE,
             source_url TEXT,
             category TEXT,
             raw_snippet TEXT
         )`, () => {
             db.get(`SELECT COUNT(*) as count FROM global_blueprints`, (err, row) => {
                 if (row && row.count === 0) {
-                    db.run(`INSERT INTO global_blueprints (blueprint_title, source_url, category, raw_snippet) VALUES 
+                    db.run(`INSERT OR IGNORE INTO global_blueprints (blueprint_title, source_url, category, raw_snippet) VALUES 
                         ('Introducing Visa Intelligent Commerce on AWS', 'https://aws.amazon.com', 'Agentic Commerce', 'Enabling agentic commerce with Amazon Bedrock AgentCore.'),
                         ('Anthropic launches AI agent blueprints for retailers', 'https://reuters.com', 'Retail AI', 'Laying groundwork for bots that shop for you ahead of holiday shopping season.'),
                         ('Nvidia launches vision AI agent blueprints for industry', 'https://datacenter.news', 'Vision AI', 'Real-time computer vision processing pipelines for automated retail environments.')`);
+                }
+            });
+        });
+
+        // 5. Crypto Telemetry & Micro-Fee Toll Gate Ledger
+        db.run(`CREATE TABLE IF NOT EXISTS crypto_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            asset_symbol TEXT,
+            price_usd TEXT,
+            toll_status TEXT
+        )`, () => {
+            db.get(`SELECT COUNT(*) as count FROM crypto_ledger`, (err, row) => {
+                if (row && row.count === 0) {
+                    db.run(`INSERT INTO crypto_ledger (asset_symbol, price_usd, toll_status) VALUES 
+                        ('BTC/USD', '$67,450.00', 'ACTIVE_MICRO_FEE'),
+                        ('ETH/USD', '$3,520.15', 'ACTIVE_MICRO_FEE'),
+                        ('HNT/USD', '$4.85', 'NODE_SYNCED')`);
                 }
             });
         });
@@ -122,25 +137,32 @@ function initializeUltimateDatabase() {
 }
 
 // ==============================================================================
-// 2. BACKGROUND WORKER: LIVE WEB SCAVENGER
+// 2. BACKGROUND WORKERS & API ENDPOINTS
 // ==============================================================================
 app.post('/api/scavenge-web', async (req, res) => {
     try {
         const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=open+source+ecommerce+blueprint&hl=en-US&gl=US&ceid=US:en');
-        let count = 0;
-        for (let item of feed.items.slice(0, 4)) {
-            db.run(`INSERT INTO global_blueprints (blueprint_title, source_url, category, raw_snippet) VALUES (?, ?, ?, ?)`,
-                [item.title, item.link || '#', 'Web Scavenge', item.contentSnippet || 'Autonomous intelligence payload.']);
-            count++;
+        let addedCount = 0;
+        
+        for (let item of feed.items) {
+            db.run(`INSERT OR IGNORE INTO global_blueprints (blueprint_title, source_url, category, raw_snippet) VALUES (?, ?, ?, ?)`,
+                [item.title, item.link || '#', 'Web Scavenge', item.contentSnippet || 'Autonomous intelligence payload.'], function(err) {
+                    if (this.changes > 0) {
+                        addedCount++;
+                    }
+                });
         }
-        res.status(200).json({ status: 'success', added: count });
+        
+        setTimeout(() => {
+            res.status(200).json({ status: 'success', added: addedCount });
+        }, 300);
     } catch (err) {
         res.status(500).json({ status: 'error', message: err.message });
     }
 });
 
 // ==============================================================================
-// 3. MASTER COMMAND CENTER DASHBOARD (Hub for all modules)
+// 3. MASTER COMMAND CENTER DASHBOARD
 // ==============================================================================
 app.get('/', (req, res) => {
     res.send(`
@@ -148,15 +170,15 @@ app.get('/', (req, res) => {
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Sovereign Master Ultimate Platform</title>
+        <title>Sovereign Master Ultimate Monolithic Platform</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
-            .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+            .container { max-width: 1150px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
             header { background: #141414; padding: 25px; border-radius: 16px; border: 1px solid #262626; border-left: 6px solid #22c55e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
             h1 { margin: 0 0 5px 0; color: #22c55e; font-size: 24px; }
             .status-badge { display: inline-block; background: #22c55e; color: #000; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
             .card { background: #141414; padding: 22px; border-radius: 16px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 12px; }
             h2 { font-size: 17px; color: #fff; }
             p { font-size: 13px; color: #94a3b8; line-height: 1.4; }
@@ -167,15 +189,15 @@ app.get('/', (req, res) => {
         <div class="container">
             <header>
                 <div>
-                    <h1>🐵 Sovereign Master Ultimate Engine</h1>
-                    <p>Status: <span class="status-badge">ONLINE</span> | All Blueprints Unified & Integrated</p>
+                    <h1>🐵 Sovereign Master Monolithic Engine</h1>
+                    <p>Status: <span class="status-badge">ONLINE</span> | All Modules Unified & Synced</p>
                 </div>
             </header>
 
             <div class="grid">
                 <div class="card" style="border-left: 4px solid #f59e0b;">
                     <h2>🛏️ Shopify Bedding Storefront</h2>
-                    <p>Shopify-style product grid featuring memory foam pillows, sleep lamps, and auto-tagged Amazon Affiliate IDs (<code>mrcenk20-21</code>).</p>
+                    <p>Shopify-style product catalog featuring memory foam pillows and auto-tagged Amazon Affiliate IDs (<code>mrcenk20-21</code>).</p>
                     <a href="/storefront" class="portal-btn" style="background:#f59e0b; color:#000;">Open Storefront &rarr;</a>
                 </div>
 
@@ -193,8 +215,14 @@ app.get('/', (req, res) => {
 
                 <div class="card" style="border-left: 4px solid #22c55e;">
                     <h2>🔍 Global Scavenged Blueprints</h2>
-                    <p>Live repository of all caught web frameworks, open-source repositories, and industry blueprints ready for deployment.</p>
+                    <p>Deduplicated repository of all caught web frameworks, open-source repositories, and industry blueprints.</p>
                     <a href="/blueprints" class="portal-btn" style="background:#22c55e; color:#000;">Open Blueprint Deck &rarr;</a>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #ec4899;">
+                    <h2>⚡ Crypto & Micro-Fee Toll Gate</h2>
+                    <p>Live cryptocurrency telemetry monitor and automated API billing ledger tracking micro-fee transactions.</p>
+                    <a href="/crypto-gate" class="portal-btn" style="background:#ec4899; color:#fff;">Open Crypto Gate &rarr;</a>
                 </div>
             </div>
         </div>
@@ -204,10 +232,10 @@ app.get('/', (req, res) => {
 });
 
 // ==============================================================================
-// 4. MODULE PAGES
+// 4. INDIVIDUAL MODULE VIEWS
 // ==============================================================================
 
-// 1. SHOPIFY BEDDING STOREFRONT
+// 1. STOREFRONT
 app.get('/storefront', (req, res) => {
     db.all(`SELECT * FROM retail_catalog`, [], (err, products) => {
         res.send(`
@@ -260,7 +288,7 @@ app.get('/storefront', (req, res) => {
     });
 });
 
-// 2. AI AGENTS HUB (Anthropic & Nvidia Blueprints)
+// 2. AI AGENTS HUB
 app.get('/ai-agents', (req, res) => {
     db.all(`SELECT * FROM ai_agent_blueprints`, [], (err, agents) => {
         res.send(`
@@ -308,7 +336,7 @@ app.get('/ai-agents', (req, res) => {
     });
 });
 
-// 3. MUSIC LOUNGE (Direct Working MP3 Streaming Player)
+// 3. MUSIC LOUNGE
 app.get('/musics', (req, res) => {
     db.all(`SELECT * FROM music_tracks ORDER BY id ASC`, [], (err, tracks) => {
         res.send(`
@@ -407,7 +435,7 @@ app.get('/blueprints', (req, res) => {
                 <header>
                     <div>
                         <h1>🔍 Global Scavenged Blueprints</h1>
-                        <p style="color:#94a3b8; font-size:13px;">All caught industry architectures, open-source repositories & AI frameworks</p>
+                        <p style="color:#94a3b8; font-size:13px;">Deduplicated Registry • Unique Blueprints Only</p>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
                         <button class="scavenge-btn" onclick="triggerScavenge()">🌐 Scavenge Web Now</button>
@@ -440,7 +468,7 @@ app.get('/blueprints', (req, res) => {
                     try {
                         const res = await fetch('/api/scavenge-web', { method: 'POST' });
                         const data = await res.json();
-                        alert('Scavenge complete! Added ' + data.added + ' new blueprints.');
+                        alert('Scavenge complete! Newly added unique blueprints: ' + data.added);
                         location.reload();
                     } catch (e) {
                         alert('Scavenge error: ' + e.message);
@@ -454,6 +482,58 @@ app.get('/blueprints', (req, res) => {
     });
 });
 
+// 5. CRYPTO & TOLL GATE MONITOR
+app.get('/crypto-gate', (req, res) => {
+    db.all(`SELECT * FROM crypto_ledger`, [], (err, rows) => {
+        res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Crypto & Micro-Fee Toll Gate</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
+                .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid #ec4899; display: flex; justify-content: space-between; align-items: center; }
+                h1 { color: #f472b6; font-size: 22px; }
+                .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { text-align: left; padding: 12px; border-bottom: 1px solid #262626; font-size: 13px; }
+                th { color: #94a3b8; }
+                .portal-btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; border: 1px solid #3f3f46; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <div>
+                        <h1>⚡ Crypto Telemetry & Micro-Fee Toll Gate</h1>
+                        <p style="color:#94a3b8; font-size:13px;">Active Metered API Billing & Asset Ledger</p>
+                    </div>
+                    <a href="/" class="portal-btn">&larr; Command Center</a>
+                </header>
+
+                <div class="card">
+                    <h2>Live Asset & Toll Ledger</h2>
+                    <table>
+                        <tr><th>Asset / Pair</th><th>Current Valuation</th><th>Toll Status</th></tr>
+                        ${rows ? rows.map(r => `
+                            <tr>
+                                <td><b>${r.asset_symbol}</b></td>
+                                <td style="color:#22c55e; font-family:monospace;">${r.price_usd}</td>
+                                <td><span style="color:#f472b6; font-weight:bold;">${r.toll_status}</span></td>
+                            </tr>
+                        `).join('') : ''}
+                    </table>
+                </div>
+            </div>
+        </body>
+        </html>
+        `);
+    });
+});
+
 app.listen(PORT, () => {
-    console.log(`🚀 Ultimate Sovereign Master Engine running on port ${PORT}`);
+    console.log(`🚀 Ultimate Monolithic Sovereign Engine running on port ${PORT}`);
 });
