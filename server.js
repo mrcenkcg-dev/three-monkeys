@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * SOVEREIGN MASTER ENGINE: BEDDING PLATFORM BLUEPRINT SCAVENGER (V5.1)
+ * SOVEREIGN MASTER ENGINE: BEDDING PLATFORM BLUEPRINT SCAVENGER (V5.2)
  * ==============================================================================
  */
 
@@ -45,7 +45,7 @@ function initializeBeddingPlatformDB() {
                 if (row && row.count === 0) {
                     db.run(`INSERT OR IGNORE INTO scavenged_bedding_blueprints (blueprint_title, source_repo, category, raw_code_snippet, status) VALUES 
                         ('Headless Mattress Configurator Schema', 'github.com/unclaimed-repos/bedding-configurator-v1', 'Product Configurator', 'const firmnessMatrix = { plush: 3, medium: 6, firm: 9 }; function calculateSupport(weight, preference) { return weight * firmnessMatrix[preference]; }', 'READY_TO_INTEGRATE'),
-                        ('Shopify Headless Bedding Storefront Template', 'github.com/leftover-code/react-linen-store', 'Storefront UI', 'export const BeddingProductCard = ({ title, threadCount, price }) => (<div className=\"card\"><h3>{title}</h3><span>{threadCount} TC</span><b>${price}</b></div>);', 'HALF_FINISHED'),
+                        ('Shopify Headless Bedding Storefront Template', 'github.com/leftover-code/react-linen-store', 'Storefront UI', 'export const BeddingProductCard = ({ title, threadCount, price }) => (<div className="card"><h3>{title}</h3><span>{threadCount} TC</span><b>\${price}</b></div>);', 'HALF_FINISHED'),
                         ('Memory Foam Density & Thermal Logging Engine', 'github.com/abandoned-labs/sleep-telemetry-sqlite', 'Backend Database', 'CREATE TABLE mattress_inventory (sku TEXT, foam_density_kgm3 INTEGER, airflow_rating TEXT, stock_count INTEGER);', 'UNCLAIMED_GOLD')`);
                 }
             });
@@ -133,7 +133,7 @@ app.get('/', (req, res) => {
                     <header>
                         <div>
                             <h1>🛏️ Sovereign Bedding Store & Blueprint Scavenger</h1>
-                            <p>Status: <span class="badge">BUILDING BEDDING PLATFORM</span> | Step 1 in Progress</p>
+                            <p>Status: <span class="badge">BUILDING BEDDING PLATFORM V5.2</span> | Step 1 in Progress</p>
                         </div>
                         <button class="action-btn" onclick="triggerScavenger()">🌐 Scavenge Real Bedding Repos</button>
                     </header>
@@ -196,5 +196,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Bedding Platform Engine V5 running on port ${PORT}`);
+    console.log(`🚀 Bedding Platform Engine V5.2 running on port ${PORT}`);
 });
