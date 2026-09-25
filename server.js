@@ -1,33 +1,36 @@
 /**
  * ==============================================================================
- * SOVEREIGN MASTER ENGINE: UNIFIED SPORTSBOOK, DISCORD BRIDGE & COMMAND HUB
+ * SOVEREIGN MASTER ENGINE: LEAN PRODUCTION SERVER
+ * (Three Monkeys Architecture + Sportsbook + RSS + Affiliate Tracking + Stripe)
  * ==============================================================================
  */
 
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const Parser = require('rss-parser');
 
 const app = express();
+const rssParser = new Parser();
 const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ==============================================================================
-// 1. DATABASE SETUP & UNIFIED SCHEMA
+// 1. DATABASE SETUP & COMPLETE TABLE SCHEMAS
 // ==============================================================================
 const dbFile = path.join(__dirname, 'sovereign_master.db');
 const db = new sqlite3.Database(dbFile, (err) => {
     if (err) {
         console.error('❌ Database connection error:', err.message);
     } else {
-        console.log('✅ Connected to Unified Sovereign Master DB.');
-        initializeMasterDatabase();
+        console.log('✅ Connected to Lean Sovereign Master DB.');
+        initializeLeanDatabase();
     }
 });
 
-function initializeMasterDatabase() {
+function initializeLeanDatabase() {
     db.serialize(() => {
         // System Logs Table
         db.run(`CREATE TABLE IF NOT EXISTS system_logs (
@@ -36,6 +39,17 @@ function initializeMasterDatabase() {
             module_name TEXT,
             status TEXT,
             message TEXT
+        )`);
+
+        // Harvested RSS & Deals Table
+        db.run(`CREATE TABLE IF NOT EXISTS harvested_deals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            title TEXT,
+            link TEXT,
+            source_feed TEXT,
+            price_extracted TEXT,
+            status TEXT DEFAULT 'PENDING'
         )`);
 
         // Sports Fixtures Table
@@ -94,7 +108,7 @@ function initializeMasterDatabase() {
             db.get(`SELECT COUNT(*) as count FROM synthesized_upgrades`, (err, row) => {
                 if (row && row.count === 0) {
                     db.run(`INSERT INTO synthesized_upgrades (upgrade_name, source_blueprint, applied_logic, status) VALUES 
-                        ('Shoulder-to-Shoulder Sportsbook v8.0 - Bot Bridge Active', 'Unified Core', 'Sportsbook + Command Center + Discord Bridge merged.', 'ACTIVE')`);
+                        ('Three Monkeys Core + Affiliate Tracking + Stripe Engine', 'Lean Core', 'Full multi-agent automation & affiliate tracking active.', 'ACTIVE')`);
                 }
             });
         });
@@ -117,6 +131,23 @@ function initializeMasterDatabase() {
                 }
             });
         });
+
+        // Affiliate Tracking Table (Amazon Associates ID: mrcenk20-21)
+        db.run(`CREATE TABLE IF NOT EXISTS affiliate_tracking (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            associates_id TEXT,
+            item_clicked TEXT,
+            referral_source TEXT,
+            status TEXT
+        )`, () => {
+            db.get(`SELECT COUNT(*) as count FROM affiliate_tracking`, (err, row) => {
+                if (row && row.count === 0) {
+                    db.run(`INSERT INTO affiliate_tracking (associates_id, item_clicked, referral_source, status) VALUES 
+                        ('mrcenk20-21', 'Anadolu Sufi Rock Gear & Books', 'Command Center Portal', 'TRACKING ACTIVE')`);
+                }
+            });
+        });
     });
 }
 
@@ -131,7 +162,7 @@ function logEvent(module, status, message) {
 }
 
 // ==============================================================================
-// 2. AI PROBABILITY ENGINE
+// 2. AI PROBABILITY & MARKET ENGINE
 // ==============================================================================
 function calculateInPlayMarkets(homeRating, awayRating, aggression) {
     const homeAdvantage = 5;
@@ -171,15 +202,35 @@ function calculateInPlayMarkets(homeRating, awayRating, aggression) {
 }
 
 // ==============================================================================
-// 3. API ENDPOINTS & DISCORD WEBHOOK BRIDGE
+// 3. API ENDPOINTS & WORKERS
 // ==============================================================================
-app.post('/api/discord-broadcast', (req, res) => {
-    const { author, content, channel } = req.body;
-    const message = `Discord Event from [${author || 'Bot User'}]: "${content || 'No content'}" in channel #${channel || 'general'}`;
-    
-    logEvent('DiscordBridge', 'SUCCESS', message);
-    console.log(`🤖 ${message}`);
-    res.status(200).json({ status: 'success', recorded: true });
+
+app.post('/api/harvest-rss', async (req, res) => {
+    const feedUrl = req.body.feed_url || 'https://news.google.com/rss/search?q=technology&hl=en-US&gl=US&ceid=US:en';
+    try {
+        const feed = await rssParser.parseURL(feedUrl);
+        let count = 0;
+        for (let item of feed.items.slice(0, 5)) {
+            db.run(`INSERT INTO harvested_deals (title, link, source_feed, price_extracted, status) VALUES (?, ?, ?, ?, ?)`,
+                [item.title, item.link, feed.title || 'RSS Stream', '$0.00', 'HARVESTED']);
+            count++;
+        }
+        logEvent('RSSWatcher', 'SUCCESS', `Harvested ${count} items from [${feedUrl}]`);
+        res.status(200).json({ status: 'success', harvested_count: count });
+    } catch (err) {
+        logEvent('RSSWatcher', 'ERROR', `Failed to parse RSS: ${err.message}`);
+        res.status(500).json({ status: 'error', message: err.message });
+    }
+});
+
+app.post('/api/create-checkout-session', (req, res) => {
+    const { amount, item_name } = req.body;
+    logEvent('StripeEngine', 'SUCCESS', `Created checkout intent for [${item_name || 'Micro-Fee Service'}]: $${amount || '5.00'}`);
+    res.status(200).json({
+        status: 'success',
+        checkout_url: '/island',
+        message: 'Stripe simulated session active. Toll gate recorded.'
+    });
 });
 
 app.post('/api/add-blueprint', (req, res) => {
@@ -189,103 +240,119 @@ app.post('/api/add-blueprint', (req, res) => {
     const stmt = db.prepare(`INSERT INTO harvested_blueprints (timestamp, source_origin, blueprint_title, architecture_pattern, integration_status) VALUES (?, ?, ?, ?, ?)`);
     stmt.run(timestamp, source_origin || 'Command Center User', blueprint_title, architecture_pattern, 'USER INJECTED', (err) => {
         stmt.finalize();
-        if (err) {
-            logEvent('BlueprintInjection', 'ERROR', `Failed to inject blueprint: ${err.message}`);
-            return res.status(500).send('Error saving blueprint.');
-        }
+        if (err) return res.status(500).send('Error saving blueprint.');
         db.run(`INSERT INTO synthesized_upgrades (upgrade_name, source_blueprint, applied_logic, status) VALUES (?, ?, ?, ?)`,
             [`Custom Service: ${blueprint_title}`, source_origin || 'User Injection', architecture_pattern, 'DEPLOYED & ACTIVE']);
-
-        logEvent('BlueprintInjection', 'SUCCESS', `Successfully injected custom service blueprint [${blueprint_title}].`);
+        logEvent('BlueprintInjection', 'SUCCESS', `Injected custom service [${blueprint_title}].`);
         res.redirect('/');
     });
 });
 
+app.post('/api/affiliate-track', (req, res) => {
+    const { item_clicked, referral_source } = req.body;
+    const stmt = db.prepare(`INSERT INTO affiliate_tracking (associates_id, item_clicked, referral_source, status) VALUES (?, ?, ?, ?)`);
+    stmt.run('mrcenk20-21', item_clicked || 'General Store Link', referral_source || 'Web Direct', 'CLICK_RECORDED', (err) => {
+        stmt.finalize();
+        if (err) return res.status(500).json({ status: 'error', message: err.message });
+        res.status(200).json({ status: 'success', associates_id: 'mrcenk20-21', recorded: true });
+    });
+});
+
 // ==============================================================================
-// 4. PRIVATE COMMAND CENTER ROUTES (/)
+// 4. PORTAL ROUTES
 // ==============================================================================
+
 app.get('/', (req, res) => {
-    db.all(`SELECT * FROM harvested_blueprints ORDER BY timestamp DESC LIMIT 6`, [], (err, blueprints) => {
-        db.all(`SELECT * FROM synthesized_upgrades ORDER BY timestamp DESC LIMIT 6`, [], (errUpgrades, upgrades) => {
+    db.all(`SELECT * FROM harvested_blueprints ORDER BY timestamp DESC LIMIT 5`, [], (err, blueprints) => {
+        db.all(`SELECT * FROM synthesized_upgrades ORDER BY timestamp DESC LIMIT 5`, [], (errUpgrades, upgrades) => {
             db.all(`SELECT * FROM system_logs ORDER BY timestamp DESC LIMIT 6`, [], (errLogs, logs) => {
-                
-                const accentColor = '#22c55e';
+                db.all(`SELECT * FROM affiliate_tracking ORDER BY timestamp DESC LIMIT 5`, [], (errAff, affiliates) => {
+                    db.all(`SELECT * FROM harvested_deals ORDER BY timestamp DESC LIMIT 5`, [], (errDeals, deals) => {
+                        
+                        const accentColor = '#22c55e';
 
-                res.send(`
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Anadolu Island - Sovereign Command Center</title>
-                    <style>
-                        * { box-sizing: border-box; margin: 0; padding: 0; }
-                        body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
-                        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-                        header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid ${accentColor}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-                        h1 { margin: 0 0 5px 0; color: ${accentColor}; font-size: 22px; }
-                        .status-badge { display: inline-block; background: #22c55e; color: #000; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-                        .portal-btn { background: #262626; color: #fff; padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid #3f3f46; display: inline-block; }
-                        .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
-                        h2 { font-size: 16px; color: #fff; margin-bottom: 12px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #262626; font-size: 13px; }
-                        th { color: #94a3b8; }
-                        .form-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-                        input, textarea { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; font-size: 13px; width: 100%; }
-                        button { background: ${accentColor}; color: #000; font-weight: bold; padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-                        button:hover { opacity: 0.9; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <header>
-                            <div>
-                                <h1>⚓ Anadolu Island Sovereign Command Center</h1>
-                                <p>Status: <span class="status-badge">ONLINE</span> | Unified Engine & Discord Bridge</p>
+                        res.send(`
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Three Monkeys Sovereign Command Center</title>
+                            <style>
+                                * { box-sizing: border-box; margin: 0; padding: 0; }
+                                body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
+                                .container { max-width: 1050px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+                                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid ${accentColor}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+                                h1 { margin: 0 0 5px 0; color: ${accentColor}; font-size: 22px; }
+                                .status-badge { display: inline-block; background: #22c55e; color: #000; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+                                .portal-btn { background: #262626; color: #fff; padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid #3f3f46; display: inline-block; }
+                                .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; }
+                                h2 { font-size: 16px; color: #fff; margin-bottom: 12px; }
+                                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                th, td { text-align: left; padding: 10px; border-bottom: 1px solid #262626; font-size: 13px; }
+                                th { color: #94a3b8; }
+                                .form-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+                                input, textarea { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; font-size: 13px; width: 100%; }
+                                button { background: ${accentColor}; color: #000; font-weight: bold; padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+                                button:hover { opacity: 0.9; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <header>
+                                    <div>
+                                        <h1>🐵 Three Monkeys Sovereign Command Center</h1>
+                                        <p>Status: <span class="status-badge">ONLINE</span> | Multi-Agent Automation & Affiliate Engine</p>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <a href="/island" class="portal-btn" style="background: #22c55e; color: #000; border-color: #22c55e;">⚽ Sportsbook & Lucky Dip</a>
+                                        <a href="/pet-project" class="portal-btn" style="background: #a855f7; color: #fff; border-color: #a855f7;">🐾 4D Sandbox</a>
+                                    </div>
+                                </header>
+
+                                <div class="card">
+                                    <h2>📥 Inject Custom Service Blueprint</h2>
+                                    <form action="/api/add-blueprint" method="POST" class="form-group">
+                                        <input type="text" name="source_origin" placeholder="Source Origin (e.g., Python Watcher / Bot)" required>
+                                        <input type="text" name="blueprint_title" placeholder="Blueprint Title (e.g., Live Telegram Notifier)" required>
+                                        <textarea name="architecture_pattern" placeholder="Architecture Logic / Description..." rows="2" required></textarea>
+                                        <button type="submit">Inject Blueprint & Synthesize Upgrade</button>
+                                    </form>
+                                </div>
+
+                                <div class="card">
+                                    <h2>💰 Affiliate Tracking Hub (ID: mrcenk20-21)</h2>
+                                    <table>
+                                        <tr><th>Timestamp</th><th>Associates ID</th><th>Item Clicked</th><th>Source</th><th>Status</th></tr>
+                                        ${affiliates ? affiliates.map(a => `<tr><td>${a.timestamp}</td><td><code>${a.associates_id}</code></td><td><b>${a.item_clicked}</b></td><td>${a.referral_source}</td><td style="color:#22c55e;">${a.status}</td></tr>`).join('') : ''}
+                                    </table>
+                                </div>
+
+                                <div class="card">
+                                    <h2>📰 Harvested RSS & Deal Stream</h2>
+                                    <table>
+                                        <tr><th>Timestamp</th><th>Title</th><th>Source</th><th>Status</th></tr>
+                                        ${deals ? deals.map(d => `<tr><td>${d.timestamp}</td><td><a href="${d.link}" target="_blank" style="color:#38bdf8; text-decoration:none;">${d.title}</a></td><td>${d.source_feed}</td><td style="color:#22c55e;">${d.status}</td></tr>`).join('') : ''}
+                                    </table>
+                                </div>
+
+                                <div class="card">
+                                    <h2>📋 Live System Telemetry Logs</h2>
+                                    <table>
+                                        <tr><th>Timestamp</th><th>Module</th><th>Status</th><th>Message</th></tr>
+                                        ${logs ? logs.map(l => `<tr><td>${l.timestamp}</td><td>${l.module_name}</td><td style="color:#38bdf8;">${l.status}</td><td>${l.message}</td></tr>`).join('') : ''}
+                                    </table>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <a href="/island" class="portal-btn" style="background: #22c55e; color: #000; border-color: #22c55e;">⚽ Sportsbook & Lucky Dip</a>
-                                <a href="/pet-project" class="portal-btn" style="background: #a855f7; color: #fff; border-color: #a855f7;">🐾 4D Sandbox</a>
-                            </div>
-                        </header>
-
-                        <div class="card">
-                            <h2>📥 Inject Custom Service Blueprint</h2>
-                            <form action="/api/add-blueprint" method="POST" class="form-group">
-                                <input type="text" name="source_origin" placeholder="Source Origin (e.g., Custom Script / Discord Bot)" required>
-                                <input type="text" name="blueprint_title" placeholder="Blueprint Title (e.g., Live Telegram Notifier)" required>
-                                <textarea name="architecture_pattern" placeholder="Architecture Logic / Description..." rows="2" required></textarea>
-                                <button type="submit">Inject Blueprint & Synthesize Upgrade</button>
-                            </form>
-                        </div>
-
-                        <div class="card">
-                            <h2>🛡️ Synthesized Upgrades & Active Modules</h2>
-                            <table>
-                                <tr><th>Upgrade Name</th><th>Source Blueprint</th><th>Status</th></tr>
-                                ${upgrades ? upgrades.map(u => `<tr><td><b>${u.upgrade_name}</b></td><td>${u.source_blueprint}</td><td><span style="color:#22c55e;">${u.status}</span></td></tr>`).join('') : ''}
-                            </table>
-                        </div>
-
-                        <div class="card">
-                            <h2>📋 Live System & Discord Telemetry Logs</h2>
-                            <table>
-                                <tr><th>Timestamp</th><th>Module</th><th>Status</th><th>Message</th></tr>
-                                ${logs ? logs.map(l => `<tr><td>${l.timestamp}</td><td>${l.module_name}</td><td style="color:#38bdf8;">${l.status}</td><td>${l.message}</td></tr>`).join('') : ''}
-                            </table>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                `);
+                        </body>
+                        </html>
+                        `);
+                    });
+                });
             });
         });
     });
 });
 
-// ==============================================================================
-// 5. SPORTSBOOK & LUCKY DIP LOUNGE (/island)
-// ==============================================================================
 app.get('/island', (req, res) => {
     db.all(`SELECT * FROM multi_league_fixtures`, (err, matches) => {
         res.send(`
@@ -293,7 +360,7 @@ app.get('/island', (req, res) => {
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>Anadolu AI Sportsbook & Lucky Dip Lounge</title>
+            <title>Sportsbook & Lucky Dip Lounge</title>
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; }
                 body { font-family: -apple-system, sans-serif; background: #070908; color: #e2e8f0; padding: 25px; }
@@ -313,7 +380,7 @@ app.get('/island', (req, res) => {
                 .bet-label { font-size: 10px; color: #94a3b8; display: block; text-transform: uppercase; }
                 .bet-val { font-size: 15px; font-weight: bold; color: #22c55e; font-family: monospace; display: block; }
                 .stats-tag { background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 8px; font-size: 12px; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); }
-                .lucky-dip-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+                .lucky-dip-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
                 .lucky-dip-result { background: #0f172a; border: 1px dashed #38bdf8; border-radius: 10px; padding: 12px; margin-top: 8px; display: none; font-size: 13px; color: #e2e8f0; }
                 .portal-btn { background: #262626; color: #fff; padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 13px; border: 1px solid #3f3f46; display: inline-block; }
             </style>
@@ -322,7 +389,7 @@ app.get('/island', (req, res) => {
             <div class="container">
                 <header>
                     <div>
-                        <h1>🌴 Anadolu AI Sportsbook & Lucky Dip Lounge</h1>
+                        <h1>🌴 Sportsbook & Lucky Dip Lounge</h1>
                         <p>Status: <span class="badge">MATCHES ACTIVE • LIVE ODDS READY</span></p>
                     </div>
                     <a href="/" class="portal-btn">&larr; Command Center</a>
@@ -330,8 +397,6 @@ app.get('/island', (req, res) => {
 
                 <div class="card">
                     <h2>⚽ International & League Fixtures</h2>
-                    <p style="color:#94a3b8; font-size:12px;">Click the <b>🎲 Lucky Dip</b> button on any match to instantly generate a randomized AI accumulator bet!</p>
-                    
                     <div class="fixtures-scroll-container">
                         ${matches ? matches.map((m, index) => {
                             const mk = calculateInPlayMarkets(m.home_rating, m.away_rating, m.aggression_rating);
@@ -365,8 +430,6 @@ app.get('/island', (req, res) => {
                                     <div class="stats-tag">⚽ <b>First Goal:</b> ${mk.firstGoalTeam}</div>
                                     <div class="stats-tag">🥅 <b>Goals Line:</b> ${mk.overUnderGoals}</div>
                                     <div class="stats-tag">🚩 <b>Corners:</b> ~${mk.expectedCorners}</div>
-                                    <div class="stats-tag">⚠️ <b>Fouls:</b> ~${mk.expectedFouls}</div>
-                                    <div class="stats-tag">🟥 <b>Red Card:</b> ${mk.redCardRisk}</div>
                                 </div>
 
                                 <div>
@@ -387,9 +450,7 @@ app.get('/island', (req, res) => {
                         \`Match Winner: \${home} & Both Teams to Score (Odds: 4.80)\`,
                         \`Exact Score: 2-1 in favor of \${home} (Odds: 8.50)\`,
                         \`First Goalscorer Combo: \${away} to score first & Over 2.5 Goals (Odds: 6.20)\`,
-                        \`Half-Time / Full-Time: Draw / \${home} (Odds: 5.50)\`,
-                        \`Total Corners Over 10.5 & \${away} Win (Odds: 7.10)\`,
-                        \`Player Card Combo: Red card in match & Both Teams Score (Odds: 9.00)\`
+                        \`Half-Time / Full-Time: Draw / \${home} (Odds: 5.50)\`
                     ];
                     const randomPick = markets[Math.floor(Math.random() * markets.length)];
                     const resultBox = document.getElementById('luckyResult-' + index);
@@ -403,9 +464,6 @@ app.get('/island', (req, res) => {
     });
 });
 
-// ==============================================================================
-// 6. 4D SANDBOX ROUTE (/pet-project)
-// ==============================================================================
 app.get('/pet-project', (req, res) => {
     db.all(`SELECT * FROM learning_cycles ORDER BY learning_cycle DESC LIMIT 10`, [], (err, rows) => {
         res.send(`
@@ -463,5 +521,5 @@ app.get('/pet-project', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Sovereign Master Engine running on port ${PORT}`);
+    console.log(`🚀 Three Monkeys Sovereign Master Engine running on port ${PORT}`);
 });
