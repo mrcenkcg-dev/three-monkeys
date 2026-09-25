@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * SOVEREIGN MASTER ENGINE: THE ULTIMATE MONOLITHIC PLATFORM
- * (Bedding Storefront + AI Agents + Global Blueprints + Sufi Rock Lounge + Crypto Gate)
+ * SOVEREIGN MASTER ENGINE: ULTIMATE MONOLITHIC PLATFORM (V2 REFINED)
+ * (Bedding Storefront + AI Agents + Scavenged Blueprints + Sufi Rock Lounge + Crypto Gate)
  * ==============================================================================
  */
 
@@ -97,7 +97,7 @@ function initializeMonolithicDatabase() {
                 ('Midnight Bosphorus Meditation', 'Sufi Synthesizer Project', 'Ambient Meditation', '5:00', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3')`);
         });
 
-        // 4. Global Scavenged Blueprints (Deduplicated)
+        // 4. Global Scavenged Blueprints (Deduplicated with UNIQUE constraint on title)
         db.run(`CREATE TABLE IF NOT EXISTS global_blueprints (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -137,11 +137,11 @@ function initializeMonolithicDatabase() {
 }
 
 // ==============================================================================
-// 2. BACKGROUND WORKERS & API ENDPOINTS
+// 2. BACKGROUND WORKERS & WEB SCAVENGER API
 // ==============================================================================
 app.post('/api/scavenge-web', async (req, res) => {
     try {
-        const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=open+source+ecommerce+blueprint&hl=en-US&gl=US&ceid=US:en');
+        const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=open+source+ecommerce+blueprint+AI+agent&hl=en-US&gl=US&ceid=US:en');
         let addedCount = 0;
         
         for (let item of feed.items) {
@@ -155,7 +155,7 @@ app.post('/api/scavenge-web', async (req, res) => {
         
         setTimeout(() => {
             res.status(200).json({ status: 'success', added: addedCount });
-        }, 300);
+        }, 400);
     } catch (err) {
         res.status(500).json({ status: 'error', message: err.message });
     }
@@ -190,7 +190,7 @@ app.get('/', (req, res) => {
             <header>
                 <div>
                     <h1>🐵 Sovereign Master Monolithic Engine</h1>
-                    <p>Status: <span class="status-badge">ONLINE</span> | All Modules Unified & Synced</p>
+                    <p>Status: <span class="status-badge">ONLINE</span> | All 26+ Blueprints & Modules Synced</p>
                 </div>
             </header>
 
@@ -421,13 +421,14 @@ app.get('/blueprints', (req, res) => {
                 * { box-sizing: border-box; margin: 0; padding: 0; }
                 body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f8fafc; padding: 25px; }
                 .container { max-width: 1050px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid #22c55e; display: flex; justify-content: space-between; align-items: center; }
+                header { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; border-left: 5px solid #22c55e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
                 h1 { color: #22c55e; font-size: 22px; }
                 .card { background: #141414; padding: 20px; border-radius: 16px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
                 .blueprint-box { background: #161616; border: 1px solid #333; padding: 18px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; }
-                .snippet { font-family: monospace; font-size: 12px; background: #0a0a0a; padding: 10px; border-radius: 6px; color: #38bdf8; border: 1px solid #262626; }
+                .snippet { font-family: monospace; font-size: 12px; background: #0a0a0a; padding: 10px; border-radius: 6px; color: #38bdf8; border: 1px solid #262626; overflow-x: auto; }
                 .portal-btn { background: #262626; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; border: 1px solid #3f3f46; }
                 .scavenge-btn { background: #22c55e; color: #000; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+                .scavenge-btn:hover { background: #16a34a; }
             </style>
         </head>
         <body>
@@ -448,7 +449,7 @@ app.get('/blueprints', (req, res) => {
                     <div style="display: flex; flex-direction: column; gap: 15px;">
                         ${rows ? rows.map(b => `
                             <div class="blueprint-box">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px;">
                                     <span style="font-size:11px; color:#22c55e; background:rgba(34,197,94,0.1); padding:2px 8px; border-radius:4px; font-weight:bold;">${b.category}</span>
                                     <span style="font-size:11px; color:#94a3b8;">${b.timestamp}</span>
                                 </div>
@@ -463,7 +464,8 @@ app.get('/blueprints', (req, res) => {
 
             <script>
                 async function triggerScavenge() {
-                    const btn = document.event ? document.event.target : document.querySelector('.scavenge-btn');
+                    const btn = document.querySelector('.scavenge-btn');
+                    const originalText = btn.innerText;
                     btn.innerText = 'Scavenging Web...';
                     try {
                         const res = await fetch('/api/scavenge-web', { method: 'POST' });
@@ -472,7 +474,7 @@ app.get('/blueprints', (req, res) => {
                         location.reload();
                     } catch (e) {
                         alert('Scavenge error: ' + e.message);
-                        btn.innerText = '🌐 Scavenge Web Now';
+                        btn.innerText = originalText;
                     }
                 }
             </script>
