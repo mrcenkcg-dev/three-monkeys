@@ -1,7 +1,7 @@
 {
-  "name": "three-monkeys",
-  "version": "1.0.0",
-  "description": "Unified Sovereign Master Engine with Video Studio, Stripe & Affiliate Tracking",
+  "name": "bedding-platform-sovereign",
+  "version": "5.0.0",
+  "description": "Sovereign Bedding Platform & Blueprint Scavenger",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,10 +9,6 @@
   "dependencies": {
     "express": "^4.19.2",
     "rss-parser": "^3.13.0",
-    "sqlite3": "^5.1.7",
-    "stripe": "^16.2.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "sqlite3": "^5.1.7"
   }
 }
