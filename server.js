@@ -1,7 +1,6 @@
 /**
  * ==============================================================================
- * SOVEREIGN PLATFORM - ADVANCED SWARM & MONETIZATION SCAVENGER (V9.0)
- * Target: Advanced AI Agents, Nano Learning Models & High-Yield AdSense Blueprints
+ * SOVEREIGN PLATFORM - ADVANCED BLUEPRINT VAULT (V9.0.1 STABLE)
  * ==============================================================================
  */
 
@@ -17,9 +16,7 @@ const PORT = process.env.PORT || 10000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ==============================================================================
-// 1. ADVANCED VAULT DATABASE SETUP
-// ==============================================================================
+// Safe database connection (using local file storage)
 const dbFile = path.join(__dirname, 'master_betting_platform.db');
 const db = new sqlite3.Database(dbFile, (err) => {
     if (err) {
@@ -45,62 +42,38 @@ function initializeVaultDB() {
                 if (row && row.count === 0) {
                     db.run(`INSERT OR IGNORE INTO advanced_vault_blueprints (blueprint_category, blueprint_title, source_repo, blueprint_code, status) VALUES 
                         ('Advanced AI Swarm', 'Multi-Agent Autonomous Betting Dispatcher', 'github.com/swarm-labs/ai-betting-agent-core', 'class SwarmController { analyzeStream(data) { return data.map(node => node.score * 1.15); } }', 'CORE_VAULT'),
-                        ('Monetization & AdSense', 'Dynamic AdSense & Affiliate Header Injection Engine', 'github.com/monetize-core/smart-adsense-injector', 'function injectAdSense(slotId, publisherCode) { const el = document.getElementById(slotId); el.innerHTML = '<script async src="adsbygoogle.js"></script>'; }', 'CORE_VAULT')`);
+                        ('Monetization & AdSense', 'Dynamic AdSense & Affiliate Header Injection Engine', 'github.com/monetize-core/smart-adsense-injector', 'function injectAdSense(slotId, publisherCode) { const el = document.getElementById(slotId); el.innerHTML = "<script async src=\\"adsbygoogle.js\\"></script>"; }', 'CORE_VAULT')`);
                 }
             });
         });
     });
 }
 
-// ==============================================================================
-// 2. ADVANCED MULTI-STREAM SCAVENGER (AI + ADSENSE)
-// ==============================================================================
+// Scavenger Endpoint
 app.post('/api/scavenge-advanced', async (req, res) => {
     try {
         let totalAdded = 0;
-
-        // Stream 1: Advanced AI Agents & Machine Learning Betting Models
         const feedAI = await rssParser.parseURL('https://news.google.com/rss/search?q=site:github.com+"ai-agent"+OR+"machine-learning"+sports+betting+algorithm+python&hl=en-US&gl=US&ceid=US:en');
         for (let item of feedAI.items) {
             const title = item.title || '';
-            const lower = title.toLowerCase();
-            if (lower.includes('ipynb') || lower.includes('wordlist') || lower.includes('audiveris')) continue;
-
+            if (title.toLowerCase().includes('ipynb') || title.toLowerCase().includes('wordlist')) continue;
             db.run(`INSERT OR IGNORE INTO advanced_vault_blueprints (blueprint_category, blueprint_title, source_repo, blueprint_code, status) VALUES (?, ?, ?, ?, ?)`,
                 ['Advanced AI Swarm', title, item.link || 'GitHub AI Repo', item.contentSnippet || '// Advanced AI model schema.', 'VAULT_PENDING'], function(err) {
                     if (this.changes > 0) totalAdded++;
                 });
         }
-
-        // Stream 2: High-Yield AdSense, Banner & Affiliate Monetization Frameworks
-        const feedAds = await rssParser.parseURL('https://news.google.com/rss/search?q=site:github.com+"adsense"+OR+"affiliate-marketing"+OR+"monetization"+storefront+javascript&hl=en-US&gl=US&ceid=US:en');
-        for (let item of feedAds.items) {
-            const title = item.title || '';
-            const lower = title.toLowerCase();
-            if (lower.includes('ipynb') || lower.includes('wordlist')) continue;
-
-            db.run(`INSERT OR IGNORE INTO advanced_vault_blueprints (blueprint_category, blueprint_title, source_repo, blueprint_code, status) VALUES (?, ?, ?, ?, ?)`,
-                ['Monetization & AdSense', title, item.link || 'GitHub Monetization Repo', item.contentSnippet || '// Monetization banner script.', 'VAULT_PENDING'], function(err) {
-                    if (this.changes > 0) totalAdded++;
-                });
-        }
-
-        setTimeout(() => res.status(200).json({ status: 'success', added: totalAdded }), 800);
+        setTimeout(() => res.status(200).json({ status: 'success', added: totalAdded }), 500);
     } catch (err) {
         res.status(500).json({ status: 'error', message: err.message });
     }
 });
 
-// Purge noise endpoint
 app.post('/api/purge-vault-noise', (req, res) => {
-    db.run(`DELETE FROM advanced_vault_blueprints WHERE status = 'VAULT_PENDING' AND (blueprint_title LIKE '%ipynb%' || blueprint_title LIKE '%wordlist%')`, [], function(err) {
+    db.run(`DELETE FROM advanced_vault_blueprints WHERE status = 'VAULT_PENDING' AND (blueprint_title LIKE '%ipynb%' OR blueprint_title LIKE '%wordlist%')`, [], function(err) {
         res.status(200).json({ status: 'success', deleted: this.changes });
     });
 });
 
-// ==============================================================================
-// 3. MASTER VAULT CONTROL PANEL INTERFACE
-// ==============================================================================
 app.get('/', (req, res) => {
     db.all(`SELECT * FROM advanced_vault_blueprints ORDER BY id DESC`, [], (err, blueprints) => {
         res.send(`
@@ -116,16 +89,12 @@ app.get('/', (req, res) => {
                 header { background: #141414; padding: 20px 25px; border-radius: 14px; border: 1px solid #262626; border-left: 6px solid #8b5cf6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
                 h1 { color: #a78bfa; font-size: 22px; margin-bottom: 4px; }
                 .badge { background: #8b5cf6; color: #fff; padding: 3px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-                
                 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
                 @media(max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
-                
                 .pane { background: #141414; border: 1px solid #262626; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 15px; min-height: 500px; max-height: 80vh; overflow-y: auto; }
                 .pane-header { font-size: 16px; font-weight: bold; color: #a78bfa; border-bottom: 1px solid #222; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-                
                 .card { background: #181818; border: 1px solid #333; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
                 .code-box { font-family: monospace; background: #0a0a0a; color: #34d399; padding: 10px; border-radius: 6px; font-size: 11px; border: 1px solid #333; overflow-x: auto; }
-                
                 .btn { background: #8b5cf6; color: #fff; padding: 9px 16px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; }
                 .btn-danger { background: #f87171; color: #000; }
             </style>
@@ -135,16 +104,14 @@ app.get('/', (req, res) => {
                 <header>
                     <div>
                         <h1>🧠 Sovereign Platform - Advanced Blueprint Vault</h1>
-                        <p>Status: <span class="badge">HEAVY SCAVENGER & FUSION MODE</span></p>
+                        <p>Status: <span class="badge">VAULT SECURED V9.0.1</span></p>
                     </div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
                         <button class="btn" onclick="triggerAdvancedScavenge()">📡 Scavenge Advanced AI & AdSense</button>
                         <button class="btn btn-danger" onclick="purgeNoise()">🧹 Purge Noise</button>
                     </div>
                 </header>
-
                 <div class="grid-2">
-                    <!-- PANE 1: CORE VAULT ARCHITECTURE -->
                     <div class="pane">
                         <div class="pane-header">
                             <span>🛡️ Core Vault Foundation</span>
@@ -164,8 +131,6 @@ app.get('/', (req, res) => {
                             `).join('') : ''}
                         </div>
                     </div>
-
-                    <!-- PANE 2: PENDING SCAVENGER STREAM -->
                     <div class="pane">
                         <div class="pane-header">
                             <span>📡 Scavenged Advanced Stream</span>
@@ -187,7 +152,6 @@ app.get('/', (req, res) => {
                     </div>
                 </div>
             </div>
-
             <script>
                 async function triggerAdvancedScavenge() {
                     const btn = document.querySelector('.btn');
@@ -202,7 +166,6 @@ app.get('/', (req, res) => {
                         btn.innerText = '📡 Scavenge Advanced AI & AdSense';
                     }
                 }
-
                 async function purgeNoise() {
                     try {
                         const res = await fetch('/api/purge-vault-noise', { method: 'POST' });
@@ -221,5 +184,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Advanced Blueprint Vault V9.0 running on port ${PORT}`);
+    console.log(`🚀 Advanced Blueprint Vault V9.0.1 running on port ${PORT}`);
 });
