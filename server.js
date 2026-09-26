@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * SOVEREIGN BETTING PLATFORM - MASTER BLUEPRINTS FUSION ENGINE (V8.0)
+ * SOVEREIGN BETTING PLATFORM - MASTER BLUEPRINTS FUSION ENGINE (V8.1)
  * Target Leagues: Premier League, Scottish Premiership, Turkish Süper Lig
  * ==============================================================================
  */
@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ==============================================================================
-// 1. MASTER PLATFORM DATABASE SCHEMA (FUSION BASE)
+// 1. MASTER PLATFORM DATABASE SCHEMA
 // ==============================================================================
 const dbFile = path.join(__dirname, 'master_betting_platform.db');
 const db = new sqlite3.Database(dbFile, (err) => {
@@ -32,7 +32,6 @@ const db = new sqlite3.Database(dbFile, (err) => {
 
 function initializeMasterPlatformDB() {
     db.serialize(() => {
-        // Hardcoded core foundation table for scavenged and fused blueprints
         db.run(`CREATE TABLE IF NOT EXISTS fused_blueprints (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -44,7 +43,6 @@ function initializeMasterPlatformDB() {
         )`, () => {
             db.get(`SELECT COUNT(*) as count FROM fused_blueprints`, (err, row) => {
                 if (row && row.count === 0) {
-                    // Hardcoded baseline modules for the 3 target leagues and ad spaces
                     db.run(`INSERT OR IGNORE INTO fused_blueprints (pillar_category, blueprint_title, source_target, hardcoded_logic, status) VALUES 
                         ('Fixture & Odds Engine', 'EPL, Scottish & Super Lig Multi-League Parser', 'Core System Base', 'const leagues = ["Premier League", "Scottish Premiership", "Turkish Süper Lig"]; function fetchFixtures(league) { return { league, status: "LIVE", odds: [1.85, 3.40, 4.20] }; }', 'HARDCODED_CORE'),
                         ('Betting Calculation Engine', 'Decimal & Fractional Odds Payout Calculator', 'Core System Base', 'function calculatePayout(stake, decimalOdds) { return (stake * decimalOdds).toFixed(2); }', 'HARDCODED_CORE'),
@@ -57,23 +55,33 @@ function initializeMasterPlatformDB() {
 }
 
 // ==============================================================================
-// 2. TARGETED SCAVENGER ENDPOINT (HUNTING LEAGUE & BETTING BLUEPRINTS)
+// 2. PRECISION BETTING SCAVENGER & NOISE PURGE
 // ==============================================================================
 app.post('/api/scavenge-blueprints', async (req, res) => {
     try {
-        // Targeted query searching for sports betting algorithms, odds engines, and football models
-        const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=site:github.com+football+odds+prediction+betting+algorithm+python+node&hl=en-US&gl=US&ceid=US:en');
+        // Ultra-specific search query targeting betting models and football odds algorithms
+        const feed = await rssParser.parseURL('https://news.google.com/rss/search?q=site:github.com+"football+odds"+OR+"sports+betting"+OR+"match+prediction"+OR+"betting+bot"+python&hl=en-US&gl=US&ceid=US:en');
         let scavengedCount = 0;
 
         for (let item of feed.items) {
             const title = item.title || '';
             const lowerTitle = title.toLowerCase();
             
-            // Filter out junk to ensure high quality
-            if (lowerTitle.includes('wordlist') || lowerTitle.includes('dataset') || lowerTitle.includes('dict')) continue;
+            // STRICT NOISE FILTER: Skip notebooks, model specs, document classification, wordlists
+            if (
+                lowerTitle.includes('ipynb') || 
+                lowerTitle.includes('model_spec') || 
+                lowerTitle.includes('document-classification') || 
+                lowerTitle.includes('wordlist') || 
+                lowerTitle.includes('dataset') || 
+                lowerTitle.includes('nlp.sql') ||
+                lowerTitle.includes('password')
+            ) {
+                continue; 
+            }
 
             db.run(`INSERT OR IGNORE INTO fused_blueprints (pillar_category, blueprint_title, source_target, hardcoded_logic, status) VALUES (?, ?, ?, ?, ?)`,
-                ['Scavenged Swarm Module', title, item.link || 'GitHub Repository', item.contentSnippet || '// Scavenged betting model code schema.', 'PENDING_FUSION'], function(err) {
+                ['Precision Betting Swarm', title, item.link || 'GitHub Repository', item.contentSnippet || '// Validated betting model schema.', 'PENDING_FUSION'], function(err) {
                     if (this.changes > 0) {
                         scavengedCount++;
                     }
@@ -88,8 +96,19 @@ app.post('/api/scavenge-blueprints', async (req, res) => {
     }
 });
 
+// Purge existing noise already in the DB
+app.post('/api/purge-noise', (req, res) => {
+    db.run(`DELETE FROM fused_blueprints WHERE status = 'PENDING_FUSION' AND (blueprint_title LIKE '%ipynb%' OR blueprint_title LIKE '%model_spec%' OR blueprint_title LIKE '%Document-Classification%' OR blueprint_title LIKE '%nlp.sql%')`, [], function(err) {
+        if (err) {
+            res.status(500).json({ status: 'error', message: err.message });
+        } else {
+            res.status(200).json({ status: 'success', deleted: this.changes });
+        }
+    });
+});
+
 // ==============================================================================
-// 3. MASTER DASHBOARD INTERFACE (TWO-WINDOW CONTROL PANEL)
+// 3. MASTER DASHBOARD INTERFACE
 // ==============================================================================
 app.get('/', (req, res) => {
     db.all(`SELECT * FROM fused_blueprints ORDER BY id DESC`, [], (err, blueprints) => {
@@ -118,6 +137,7 @@ app.get('/', (req, res) => {
                 
                 .btn { background: #e11d48; color: #fff; padding: 9px 16px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; }
                 .btn-secondary { background: #38bdf8; color: #000; }
+                .btn-danger { background: #f87171; color: #000; }
             </style>
         </head>
         <body>
@@ -127,8 +147,9 @@ app.get('/', (req, res) => {
                         <h1>⚽ Sovereign Betting Platform Master Base</h1>
                         <p>Leagues: <span class="badge">EPL • Scottish Premiership • Turkish Süper Lig</span></p>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn btn-secondary" onclick="triggerScavenger()">🔍 Scavenge Betting Repos</button>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary" onclick="triggerScavenger()">🔍 Precision Scavenge</button>
+                        <button class="btn btn-danger" onclick="purgeNoise()">🧹 Purge Noise</button>
                     </div>
                 </header>
 
@@ -153,10 +174,10 @@ app.get('/', (req, res) => {
                         </div>
                     </div>
 
-                    <!-- PANE 2: SCAVENGED SWARM POOL -->
+                    <!-- PANE 2: PRECISION SCAVENGER POOL -->
                     <div class="pane">
                         <div class="pane-header">
-                            <span>📡 Scavenged Blueprint Feed</span>
+                            <span>📡 Cleaned Betting Swarm Feed</span>
                             <span style="font-size:12px; color:#94a3b8;">Total: ${blueprints ? blueprints.filter(b => b.status === 'PENDING_FUSION').length : 0}</span>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -182,11 +203,23 @@ app.get('/', (req, res) => {
                     try {
                         const res = await fetch('/api/scavenge-blueprints', { method: 'POST' });
                         const data = await res.json();
-                        alert('Scavenge complete! New betting models found: ' + data.scavenged);
+                        alert('Precision Scavenge complete! New betting models added: ' + data.scavenged);
                         location.reload();
                     } catch (e) {
                         alert('Error: ' + e.message);
-                        btn.innerText = '🔍 Scavenge Betting Repos';
+                        btn.innerText = '🔍 Precision Scavenge';
+                    }
+                }
+
+                async function purgeNoise() {
+                    if (!confirm('Clean out non-betting notebook and model files?')) return;
+                    try {
+                        const res = await fetch('/api/purge-noise', { method: 'POST' });
+                        const data = await res.json();
+                        alert('Purged noisy items: ' + data.deleted);
+                        location.reload();
+                    } catch (e) {
+                        alert('Error: ' + e.message);
                     }
                 }
             </script>
@@ -197,5 +230,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Master Betting Platform Engine V8.0 running on port ${PORT}`);
+    console.log(`🚀 Master Betting Platform Engine V8.1 running on port ${PORT}`);
 });
