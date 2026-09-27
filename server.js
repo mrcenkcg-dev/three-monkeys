@@ -1,7 +1,7 @@
 // ==========================================
 // BET INSIDE ENGINE - UNIFIED AUTONOMOUS SERVER
 // Environment: Node.js / Express / SQLite (Render Optimized)
-// Target Leagues: Premier League, Scottish Premiership, Süper Lig
+// Target Leagues: Premier League, Scottish Premiership, Süper Lig, International
 // Target Probability Range: 70% - 98%
 // ==========================================
 
@@ -53,7 +53,7 @@ db.serialize(() => {
     )`);
 });
 
-// Seed Core Leagues, Teams, and High-Confidence 70%-98% Baseline Feeds if Empty
+// Seed Core Leagues, Teams, International Trackers, and High-Confidence 70%-98% Baseline Feeds if Empty
 db.get("SELECT COUNT(*) as count FROM leagues", (err, row) => {
     if (row && row.count === 0) {
         const leaguesData = [
@@ -86,6 +86,16 @@ db.get("SELECT COUNT(*) as count FROM leagues", (err, row) => {
                     { match: 'Fenerbahçe S.K. vs Lower Block', projection: 'Over Match Goals / High xG Variant', confidence: 86.9 },
                     { match: 'Beşiktaş J.K. vs Regional Matchup', projection: 'Home Clean Sheet Option', confidence: 76.2 }
                 ]
+            },
+            { 
+                name: 'International Football', 
+                country: 'Global / UEFA', 
+                teams: ['England', 'France', 'Germany', 'Scotland', 'Portugal', 'Spain', 'Netherlands', 'Belgium', 'Türkiye'],
+                samples: [
+                    { match: 'France vs Germany (International Window)', projection: 'Under 3.5 Goals / Tactical Gridlock', confidence: 92.4 },
+                    { match: 'England vs Scotland (Cross-Border Clash)', projection: 'Home Win / Over 1.5 Goals', confidence: 89.1 },
+                    { match: 'Portugal vs Netherlands (Elite Fixture)', projection: 'Both Teams to Score / Value Draw', confidence: 84.6 }
+                ]
             }
         ];
 
@@ -95,7 +105,7 @@ db.get("SELECT COUNT(*) as count FROM leagues", (err, row) => {
                     if (!err) {
                         const leagueId = this.lastID;
                         l.teams.forEach(t => {
-                            db.run(`INSERT INTO teams (league_id, name, stadium) VALUES (?, ?, ?)`, [leagueId, t, `${t} Stadium`]);
+                            db.run(`INSERT INTO teams (league_id, name, stadium) VALUES (?, ?, ?)`, [leagueId, t, `${t} National Arena / Stadium`]);
                         });
                         l.samples.forEach(s => {
                             db.run(`INSERT INTO intelligence_feeds (league, focus_match, projection, confidence, status) VALUES (?, ?, ?, ?, ?)`, 
@@ -105,7 +115,7 @@ db.get("SELECT COUNT(*) as count FROM leagues", (err, row) => {
                 });
             });
         });
-        console.log('✅ Seeded leagues, rosters, and 70%-98% intelligence feeds.');
+        console.log('✅ Seeded leagues, rosters, international tier, and 70%-98% intelligence feeds.');
     }
 });
 
@@ -161,11 +171,11 @@ app.get('/', (req, res) => {
 
                     <div class="grid">
                         <div class="card">
-                            <h3>🎯 Live 24/7 Intelligence Feeds (70% - 98% Range)</h3>
+                            <h3>🎯 Live 24/7 Intelligence Feeds (Leagues + International Windows)</h3>
                             <table>
                                <thead>
                                    <tr>
-                                       <th>League</th>
+                                       <th>League / Category</th>
                                        <th>Focus Match / Area</th>
                                        <th>Projection & Variance</th>
                                        <th>Confidence</th>
@@ -201,7 +211,7 @@ app.get('/api/intelligence', (req, res) => {
         } else {
             res.json({
                 system: "Bet Inside Private Engine",
-                filter: "70% to 98% High-Confidence Window",
+                filter: "70% to 98% High-Confidence Window (Leagues + International)",
                 storage: "Render SQLite Persistent",
                 data: rows
             });
@@ -217,7 +227,7 @@ app.get('/api/teams', (req, res) => {
         } else {
             res.json({
                 system: "Bet Inside Private Engine",
-                leagues_tracked: ["English Premier League", "Scottish Premiership", "Süper Lig"],
+                leagues_tracked: ["English Premier League", "Scottish Premiership", "Süper Lig", "International Football"],
                 rosters: rows
             });
         }
