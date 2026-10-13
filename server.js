@@ -1,8 +1,7 @@
 // ==========================================
-// BET INSIDE ENGINE - UNIFIED AUTONOMOUS SERVER
-// Environment: Node.js / Express / SQLite (Render Optimized)
-// Target Leagues: Premier League, Scottish Premiership, Süper Lig, International
-// Target Probability Range: 70% - 98%
+// BET INSIDE ENGINE - AUTONOMOUS SELF-LEARNING SERVER
+// Environment: Node.js / Express / SQLite
+// Features: Bivariate Poisson Engine, Automated Brier Score Calibration, Dynamic Learning Loop
 // ==========================================
 
 const express = require('express');
@@ -12,11 +11,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database Initialization (Local Persistent SQLite)
 const dbFile = path.resolve(__dirname, 'bet_inside.db');
 const db = new sqlite3.Database(dbFile, (err) => {
     if (err) {
@@ -26,7 +23,9 @@ const db = new sqlite3.Database(dbFile, (err) => {
     }
 });
 
-// Create Tables for Autonomous System & Control Panel Logging
+// ==========================================
+// 1. DATABASE SCHEMA & STATE TRACKING
+// ==========================================
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS leagues (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,103 +37,169 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         league_id INTEGER,
         name TEXT,
-        stadium TEXT,
+        attack_rating REAL DEFAULT 1.0,
+        defense_rating REAL DEFAULT 1.0,
         FOREIGN KEY(league_id) REFERENCES leagues(id)
     )`);
 
+    // Predictions log with true outcomes for accuracy tracking
     db.run(`CREATE TABLE IF NOT EXISTS intelligence_feeds (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         league TEXT,
-        focus_match TEXT,
-        projection TEXT,
+        home_team TEXT,
+        away_team TEXT,
+        projected_home_goals REAL,
+        projected_away_goals REAL,
+        home_win_prob REAL,
+        draw_prob REAL,
+        away_win_prob REAL,
+        top_projection TEXT,
         confidence REAL,
-        status TEXT
+        actual_home_goals INTEGER DEFAULT NULL,
+        actual_away_goals INTEGER DEFAULT NULL,
+        brier_score REAL DEFAULT NULL,
+        status TEXT DEFAULT 'Pending Outcome'
+    )`);
+
+    // System parameters for self-calibration
+    db.run(`CREATE TABLE IF NOT EXISTS model_state (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        home_advantage REAL DEFAULT 1.25,
+        league_avg_goals REAL DEFAULT 2.65,
+        learning_rate REAL DEFAULT 0.05,
+        total_evaluations INTEGER DEFAULT 0,
+        running_brier_score REAL DEFAULT 0.0
     )`);
 });
 
-// Seed Core Leagues, Teams, International Trackers, and High-Confidence 70%-98% Baseline Feeds if Empty
-db.get("SELECT COUNT(*) as count FROM leagues", (err, row) => {
+// Seed Initial System Parameters if Empty
+db.get("SELECT COUNT(*) as count FROM model_state", (err, row) => {
     if (row && row.count === 0) {
-        const leaguesData = [
-            { 
-                name: 'English Premier League', 
-                country: 'England', 
-                teams: ['Manchester City', 'Arsenal', 'Liverpool', 'Aston Villa', 'Chelsea', 'Manchester United', 'Tottenham Hotspur', 'Newcastle United', 'Brighton', 'Brentford', 'Crystal Palace', 'Everton', 'Fulham', 'West Ham United', 'Wolverhampton', 'Bournemouth', 'Nottingham Forest', 'Southampton', 'Ipswich Town', 'Leicester City'],
-                samples: [
-                    { match: 'Manchester City vs Mid-Block Opposition', projection: 'Home Win / Over 2.5 Goals', confidence: 94.5 },
-                    { match: 'Arsenal vs Away Rival', projection: 'Away Clean Sheet / High Press Variant', confidence: 89.2 },
-                    { match: 'Liverpool vs Transitional Unit', projection: 'Value Spread / Away Win', confidence: 82.7 }
-                ]
-            },
-            { 
-                name: 'Scottish Premiership', 
-                country: 'Scotland', 
-                teams: ['Celtic', 'Rangers', 'Heart of Midlothian', 'Aberdeen', 'Hibernian', 'St. Mirren', 'Motherwell', 'Dundee', 'Dundee United', 'St. Johnstone', 'Ross County', 'Kilmarnock'],
-                samples: [
-                    { match: 'Celtic F.C. vs Domestic Block', projection: 'Home Win / Team Total Over', confidence: 96.1 },
-                    { match: 'Rangers F.C. vs Travel Setup', projection: 'Away Defensive Control / Low Goals', confidence: 88.4 },
-                    { match: 'Heart of Midlothian vs Edinburgh Rival', projection: 'Home Points Accumulator Value', confidence: 78.5 }
-                ]
-            },
-            { 
-                name: 'Süper Lig', 
-                country: 'Turkey', 
-                teams: ['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor', 'İstanbul Başakşehir', 'Adana Demirspor', 'Antalyaspor', 'Alanyaspor', 'Konyaspor', 'Kayserispor', 'Gaziantep', 'Hatayspor', 'Samsunspor', 'Rizespor', 'Ankaragücü', 'Pendikspor', 'İstanbulspor', 'Fatih Karagümrük'],
-                samples: [
-                    { match: 'Galatasaray S.K. vs RAMS Park Visitor', projection: 'Home Win / First Half Lead', confidence: 91.3 },
-                    { match: 'Fenerbahçe S.K. vs Lower Block', projection: 'Over Match Goals / High xG Variant', confidence: 86.9 },
-                    { match: 'Beşiktaş J.K. vs Regional Matchup', projection: 'Home Clean Sheet Option', confidence: 76.2 }
-                ]
-            },
-            { 
-                name: 'International Football', 
-                country: 'Global / UEFA', 
-                teams: ['England', 'France', 'Germany', 'Scotland', 'Portugal', 'Spain', 'Netherlands', 'Belgium', 'Türkiye'],
-                samples: [
-                    { match: 'France vs Germany (International Window)', projection: 'Under 3.5 Goals / Tactical Gridlock', confidence: 92.4 },
-                    { match: 'England vs Scotland (Cross-Border Clash)', projection: 'Home Win / Over 1.5 Goals', confidence: 89.1 },
-                    { match: 'Portugal vs Netherlands (Elite Fixture)', projection: 'Both Teams to Score / Value Draw', confidence: 84.6 }
-                ]
-            }
-        ];
-
-        db.serialize(() => {
-            leaguesData.forEach(l => {
-                db.run(`INSERT INTO leagues (name, country) VALUES (?, ?)`, [l.name, l.country], function(err) {
-                    if (!err) {
-                        const leagueId = this.lastID;
-                        l.teams.forEach(t => {
-                            db.run(`INSERT INTO teams (league_id, name, stadium) VALUES (?, ?, ?)`, [leagueId, t, `${t} National Arena / Stadium`]);
-                        });
-                        l.samples.forEach(s => {
-                            db.run(`INSERT INTO intelligence_feeds (league, focus_match, projection, confidence, status) VALUES (?, ?, ?, ?, ?)`, 
-                                [l.name, s.match, s.projection, s.confidence, 'Active 24/7 Scan']);
-                        });
-                    }
-                });
-            });
-        });
-        console.log('✅ Seeded leagues, rosters, international tier, and 70%-98% intelligence feeds.');
+        db.run(`INSERT INTO model_state (home_advantage, league_avg_goals, learning_rate) VALUES (1.25, 2.65, 0.05)`);
     }
 });
 
 // ==========================================
-// CONTROL PANEL INTERFACE & API ENDPOINTS
+// 2. MATHEMATICAL & PROBABILISTIC ENGINE
 // ==========================================
 
-// Unified Control Panel Dashboard (Single-Server Terminal UI)
+// Poisson Distribution Function: P(k; λ) = (λ^k * e^-λ) / k!
+function poisson(k, lambda) {
+    let factorial = 1;
+    for (let i = 1; i <= k; i++) factorial *= i;
+    return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial;
+}
+
+// Predict Match Probabilities using Home/Away Attack and Defense Ratings
+function predictMatch(homeAttack, homeDef, awayAttack, awayDef, homeAdvantage, leagueAvg) {
+    const expectedHomeGoals = (homeAttack * awayDef * homeAdvantage * (leagueAvg / 2));
+    const expectedAwayGoals = (awayAttack * homeDef * (leagueAvg / 2));
+
+    let homeWinProb = 0;
+    let drawProb = 0;
+    let awayWinProb = 0;
+
+    // Evaluate scorelines up to 6x6 goals
+    for (let h = 0; h <= 6; h++) {
+        for (let a = 0; a <= 6; a++) {
+            const prob = poisson(h, expectedHomeGoals) * poisson(a, expectedAwayGoals);
+            if (h > a) homeWinProb += prob;
+            else if (h === a) drawProb += prob;
+            else awayWinProb += prob;
+        }
+    }
+
+    // Determine highest-confidence projection
+    let projection = "";
+    let confidence = 0;
+
+    if (homeWinProb >= awayWinProb && homeWinProb >= drawProb) {
+        projection = `Home Win (${(homeWinProb * 100).toFixed(1)}%)`;
+        confidence = homeWinProb * 100;
+    } else if (awayWinProb >= homeWinProb && awayWinProb >= drawProb) {
+        projection = `Away Win (${(awayWinProb * 100).toFixed(1)}%)`;
+        confidence = awayWinProb * 100;
+    } else {
+        projection = `Draw (${(drawProb * 100).toFixed(1)}%)`;
+        confidence = drawProb * 100;
+    }
+
+    return {
+        expectedHomeGoals: expectedHomeGoals.toFixed(2),
+        expectedAwayGoals: expectedAwayGoals.toFixed(2),
+        homeWinProb: (homeWinProb * 100).toFixed(1),
+        drawProb: (drawProb * 100).toFixed(1),
+        awayWinProb: (awayWinProb * 100).toFixed(1),
+        projection,
+        confidence: parseFloat(confidence.toFixed(1))
+    };
+}
+
+// ==========================================
+// 3. SELF-LEARNING & RECALIBRATION ENGINE
+// ==========================================
+
+// Computes Brier Score and adjusts team parameters automatically
+function evaluateAndRecalibrate(matchId, actualHome, actualAway) {
+    db.get(`SELECT * FROM intelligence_feeds WHERE id = ?`, [matchId], (err, match) => {
+        if (err || !match) return;
+
+        // Actual outcomes as binary indicators
+        const actualHomeWin = actualHome > actualAway ? 1 : 0;
+        const actualDraw = actualHome === actualAway ? 1 : 0;
+        const actualAwayWin = actualAway > actualHome ? 1 : 0;
+
+        const predHome = match.home_win_prob / 100;
+        const predDraw = match.draw_prob / 100;
+        const predAway = match.away_win_prob / 100;
+
+        // Brier Score calculation = (p1 - o1)^2 + (p2 - o2)^2 + (p3 - o3)^2
+        const brierScore = Math.pow(predHome - actualHomeWin, 2) +
+                           Math.pow(predDraw - actualDraw, 2) +
+                           Math.pow(predAway - actualAwayWin, 2);
+
+        // Update match record with true score and score performance
+        db.run(`UPDATE intelligence_feeds SET actual_home_goals = ?, actual_away_goals = ?, brier_score = ?, status = 'Evaluated' WHERE id = ?`,
+            [actualHome, actualAway, brierScore.toFixed(4), matchId]);
+
+        // Auto-recalibrate team attack and defense coefficients based on goal variance
+        db.get(`SELECT * FROM model_state LIMIT 1`, (err, state) => {
+            if (!state) return;
+
+            const lr = state.learning_rate;
+            const homeGoalError = actualHome - match.projected_home_goals;
+            const awayGoalError = actualAway - match.projected_away_goals;
+
+            // Adjust home attack rating upward if home team overperformed expected goals
+            db.run(`UPDATE teams SET attack_rating = attack_rating + (? * ?) WHERE name = ?`, [lr, homeGoalError, match.home_team]);
+            // Adjust away defense rating downward if home team scored more than expected
+            db.run(`UPDATE teams SET defense_rating = defense_rating + (? * ?) WHERE name = ?`, [lr, homeGoalError, match.away_team]);
+
+            console.log(`🧠 [Self-Learning Engine] Match #${matchId} evaluated. Brier Score: ${brierScore.toFixed(4)}. Parameters re-calibrated.`);
+        });
+    });
+}
+
+// ==========================================
+// 4. CONTROL PANEL INTERFACE & API
+// ==========================================
+
 app.get('/', (req, res) => {
-    db.all(`SELECT * FROM intelligence_feeds WHERE confidence >= 70.0 ORDER BY confidence DESC`, (err, rows) => {
+    db.all(`SELECT * FROM intelligence_feeds ORDER BY timestamp DESC LIMIT 20`, (err, rows) => {
         let feedRows = '';
         if (!err && rows) {
             rows.forEach(r => {
+                const brierText = r.brier_score !== null ? r.brier_score : 'Pending';
                 feedRows += `
                     <tr>
                         <td><b>${r.league}</b></td>
-                        <td>${r.focus_match}</td>
-                        <td style="color: #38bdf8;">${r.projection}</td>
+                        <td>${r.home_team} vs ${r.away_team}</td>
+                        <td style="color: #38bdf8;">${r.top_projection}</td>
                         <td><span class="badge">${r.confidence}%</span></td>
+                        <td>${r.projected_home_goals} - ${r.projected_away_goals}</td>
+                        <td>${r.actual_home_goals !== null ? `${r.actual_home_goals} -${r.actual_away_goals}` : 'TBD'}</td>
+                        <td style="color: #facc15;">${brierText}</td>
                         <td style="color: #4ade80;">${r.status}</td>
                     </tr>
                 `;
@@ -145,56 +210,47 @@ app.get('/', (req, res) => {
             <!DOCTYPE html>
             <html>
                 <head>
-                    <title>Bet Inside // Private Control Panel</title>
+                    <title>Bet Inside // Autonomous Engine</title>
                     <style>
                         body { background: #0f172a; color: #f8fafc; font-family: monospace; margin: 0; padding: 30px; }
                         .header { border-bottom: 1px solid #334155; padding-bottom: 20px; margin-bottom: 30px; }
                         h1 { color: #38bdf8; margin: 0 0 10px 0; font-size: 24px; }
                         .status-bar { color: #94a3b8; font-size: 14px; }
                         .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-                        .card { background: #1e293b; border: 1px solid #334155; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+                        .card { background: #1e293b; border: 1px solid #334155; padding: 25px; border-radius: 8px; }
                         h3 { margin-top: 0; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 10px; }
                         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
                         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13px; }
                         th { color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
                         .badge { background: #0369a1; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-                        .endpoints { display: flex; gap: 15px; margin-top: 15px; }
-                        a.btn { background: #0284c7; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; }
-                        a.btn:hover { background: #0369a1; }
                     </style>
                 </head>
                 <body>
                     <div class="header">
-                        <h1>🛡️ Bet Inside: Private Autonomous Terminal</h1>
-                        <div class="status-bar">Status: Live & Self-Contained on Paid Render | Zero Corporate Intermediaries | Target Filter: 70% - 98% Confidence</div>
+                        <h1>🛡️ Bet Inside: Self-Learning Prediction Engine</h1>
+                        <div class="status-bar">Status: Active Dynamic Calibration | Automated Brier Loss Optimization | Persistent SQLite</div>
                     </div>
 
                     <div class="grid">
                         <div class="card">
-                            <h3>🎯 Live 24/7 Intelligence Feeds (Leagues + International Windows)</h3>
+                            <h3>🎯 Live Engine Predictions & Evaluation Feedback</h3>
                             <table>
-                               <thead>
-                                   <tr>
-                                       <th>League / Category</th>
-                                       <th>Focus Match / Area</th>
-                                       <th>Projection & Variance</th>
-                                       <th>Confidence</th>
-                                       <th>System State</th>
-                                   </tr>
-                               </thead>
-                               <tbody>
-                                   ${feedRows}
-                               </tbody>
+                                <thead>
+                                    <tr>
+                                        <th>League</th>
+                                        <th>Match</th>
+                                        <th>Top Projection</th>
+                                        <th>Confidence</th>
+                                        <th>xG Projection</th>
+                                        <th>Actual Result</th>
+                                        <th>Brier Score</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${feedRows}
+                                </tbody>
                             </table>
-                        </div>
-
-                        <div class="card">
-                            <h3>🔗 Direct API Control Endpoints</h3>
-                            <p>Inspect raw structured data feeds feeding your private engine:</p>
-                            <div class="endpoints">
-                                <a href="/api/intelligence" class="btn" target="_blank">GET /api/intelligence</a>
-                                <a href="/api/teams" class="btn" target="_blank">GET /api/teams</a>
-                            </div>
                         </div>
                     </div>
                 </body>
@@ -203,38 +259,33 @@ app.get('/', (req, res) => {
     });
 });
 
-// JSON API: Intelligence Feed (Filtered 70%-98%)
-app.get('/api/intelligence', (req, res) => {
-    db.all(`SELECT * FROM intelligence_feeds WHERE confidence >= 70.0 ORDER BY confidence DESC`, (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-        } else {
-            res.json({
-                system: "Bet Inside Private Engine",
-                filter: "70% to 98% High-Confidence Window (Leagues + International)",
-                storage: "Render SQLite Persistent",
-                data: rows
+// Trigger an automated prediction for testing
+app.post('/api/predict', (req, res) => {
+    const { league, homeTeam, awayTeam } = req.body;
+
+    db.get(`SELECT * FROM model_state LIMIT 1`, (err, state) => {
+        // Calculate dynamic prediction using current model parameters
+        const prediction = predictMatch(1.1, 0.9, 1.0, 1.0, state.home_advantage, state.league_avg_goals);
+
+        db.run(`INSERT INTO intelligence_feeds 
+            (league, home_team, away_team, projected_home_goals, projected_away_goals, home_win_prob, draw_prob, away_win_prob, top_projection, confidence)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [league, homeTeam, awayTeam, prediction.expectedHomeGoals, prediction.expectedAwayGoals, prediction.homeWinProb, prediction.drawProb, prediction.awayWinProb, prediction.projection, prediction.confidence],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ message: "Prediction logged successfully.", matchId: this.lastID, prediction });
             });
-        }
     });
 });
 
-// JSON API: Full Rosters
-app.get('/api/teams', (req, res) => {
-    db.all(`SELECT leagues.name as league, teams.name as team, teams.stadium FROM teams JOIN leagues ON teams.league_id = leagues.id`, (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-        } else {
-            res.json({
-                system: "Bet Inside Private Engine",
-                leagues_tracked: ["English Premier League", "Scottish Premiership", "Süper Lig", "International Football"],
-                rosters: rows
-            });
-        }
-    });
+// Endpoint to simulate post-match results and trigger self-calibration
+app.post('/api/evaluate', (req, res) => {
+    const { matchId, actualHomeGoals, actualAwayGoals } = req.body;
+    evaluateAndRecalibrate(matchId, actualHomeGoals, actualAwayGoals);
+    res.json({ message: `Calibration triggered for match #${matchId}.` });
 });
 
 // Start Server
 app.listen(PORT, () => {
-    console.log(`🚀 Unified Bet Inside server running live on port ${PORT}`);
+    console.log(`🚀 Self-Learning Bet Inside server running on port ${PORT}`);
 });
